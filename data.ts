@@ -59,7 +59,7 @@ export const categories: Category[] = [
 export const posts: Post[] = [
   {
     id: '1',
-    title: 'Smart Ways to Save Time During Your Work Week',
+    title: 'Pitching Your Idea: A Guide to Presenting with Impact',
     excerpt: "Wherever you're headed, pause here to reset, reflect, and bring something meaningful with you.",
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCUKeEOzIhySMwVoKPIhACTUJbrVksfDlBAc0jXyJQrk8AJWzrF1y5OXlE4d0i2cBRxKpTSinmUyFt7Mj1Xj2L3m6KmsNBgA2uMpAYh3gCf0Itwjr0YbkC4TrNWpq0emAoeMyXk6YP62WL_U04RUiDW1ZucL75inIRfWakvJaeJITLmKl5NBEC1wDLpjwNiG7Gn6s0bXj7QBvnOrYSvA4WpL5kzPWGIK75vtLzlvXZ4thFQfEqAunPl8QYM-9lu9Q6CCHpK9_lhU60E',
     category: 'Business',

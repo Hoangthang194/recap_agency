@@ -1,28 +1,92 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { categories, posts } from '@/data';
 
 const Header: React.FC = () => {
     const pathname = usePathname();
+    const [isVisible, setIsVisible] = useState(true);
+    const [scrolled, setScrolled] = useState(false);
+    const lastScrollYRef = React.useRef(0);
+    const tickingRef = React.useRef(false);
     
     // Get latest 4 posts for spotlight
     const spotlightPosts = posts.slice(0, 4);
 
+    useEffect(() => {
+        const scrollPoint = 200; // Threshold như trong HTML mẫu
+        
+        const handleScroll = () => {
+            if (!tickingRef.current) {
+                window.requestAnimationFrame(() => {
+                    const currentScrollY = window.scrollY;
+                    const scrollDifference = Math.abs(currentScrollY - lastScrollYRef.current);
+                    
+                    // Chỉ xử lý nếu scroll đủ nhiều (tránh nháy)
+                    if (scrollDifference > 5) {
+                        // Hiện header khi ở đầu trang
+                        if (currentScrollY < 10) {
+                            setIsVisible(true);
+                            setScrolled(false);
+                        } 
+                        // Ẩn header khi scroll xuống và đã scroll qua threshold
+                        else if (currentScrollY > lastScrollYRef.current && currentScrollY > scrollPoint + 200) {
+                            setIsVisible(false);
+                            setScrolled(true);
+                        } 
+                        // Hiện header khi scroll lên
+                        else if (currentScrollY < lastScrollYRef.current) {
+                            setIsVisible(true);
+                            setScrolled(true);
+                        }
+                        
+                        lastScrollYRef.current = currentScrollY;
+                    }
+                    
+                    tickingRef.current = false;
+                });
+                
+                tickingRef.current = true;
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
-        <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-gray-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <header className={`sticky top-0 z-50 w-full transition-transform duration-300 ${
+            isVisible 
+                ? 'translate-y-0 cs-header-smart-visible' 
+                : '-translate-y-full'
+        }`}>
+            <div className={`w-full px-4 transition-all duration-300 ${
+                scrolled ? 'pt-4' : ''
+            }`}>
+                <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
+                    scrolled
+                        ? 'bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-md rounded-2xl'
+                        : 'bg-transparent'
+                }`}>
                 <div className="flex justify-between items-center h-20">
-                    <div className="flex-shrink-0 flex items-center gap-2">
-                        <Link href="/" className="flex items-center gap-2 group">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl relative overflow-hidden transition-transform group-hover:scale-105">
-                                <span className="relative z-10 text-lg">+</span>
-                                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
-                            </div>
-                            <span className="font-bold text-xl tracking-tight text-gray-900 group-hover:text-primary transition-colors">Recap</span>
-                        </Link>
+                    <div className="flex-shrink-0 flex items-center">
+                        <h1 className="m-0">
+                            <Link href="/" className="flex items-center group">
+                                <div className="relative h-8 flex items-center transition-transform group-hover:scale-105">
+                                    <Image 
+                                        src="/assets/logo.webp" 
+                                        alt="Recap" 
+                                        width={101} 
+                                        height={29}
+                                        className="object-contain h-8 w-auto"
+                                        priority
+                                    />
+                                </div>
+                            </Link>
+                        </h1>
                     </div>
 
                     <div className="hidden md:flex space-x-2 items-center">
@@ -92,6 +156,7 @@ const Header: React.FC = () => {
                             Buy Now
                         </a>
                     </div>
+                </div>
                 </div>
             </div>
         </header>

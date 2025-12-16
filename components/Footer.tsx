@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 
 const Footer: React.FC = () => {
     return (
@@ -8,12 +10,17 @@ const Footer: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-8 mb-16">
                     <div className="lg:col-span-2 pr-8">
-                        <div className="flex items-center gap-2 mb-6">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                                +
+                        <Link href="/" className="flex items-center gap-2 mb-6 group">
+                            <div className="relative h-8 flex items-center transition-transform group-hover:scale-105">
+                                <Image 
+                                    src="/assets/logo.webp" 
+                                    alt="Recap Logo" 
+                                    width={101} 
+                                    height={29}
+                                    className="object-contain h-8 w-auto"
+                                />
                             </div>
-                            <span className="font-bold text-xl text-gray-900">Recap</span>
-                        </div>
+                        </Link>
                         <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-xs">
                             Your mental filter in a world of constant input — cutting through the noise to focus on what truly matters.
                         </p>

@@ -1,0 +1,36 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+.line-height-input {
+  font-weight: bold;
+  font-size: 14px;
+  color: #777;
+  border-radius: 5px;
+  border-color: grey;
+  height: 15px;
+  padding: 2px 4px;
+  text-align: center;
+  width: 20px;
+  align-self: center;
+}
+
+.line-height-input:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+button.line-height-decrement {
+  padding: 0px;
+  margin-right: 3px;
+}
+
+button.line-height-increment {
+  padding: 0px;
+  margin-left: 3px;
+}
+
