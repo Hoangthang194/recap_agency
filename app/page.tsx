@@ -4,13 +4,15 @@ import { categories, posts, currentUser } from '@/data'
 import Link from 'next/link'
 
 export default function Home() {
-  // Featured post is distinct
+  // Featured post is distinct - find the post with matching title
+  const heroPostData = posts.find(p => p.title === "Pitching Your Idea: A Guide to Presenting with Impact") || posts[0];
   const heroPost = {
-    title: "Pitching Your Idea: A Guide to Presenting with Impact",
-    excerpt: "You'll find something here — whether it's a reminder, a new method, or a clear next question.",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB1TzWsTXRHD4nQMwwb8dlI0OgldTjC8-gWH4f3tQzMj_qfvLbY6OqQPVcqHac99bMrX_F9i5PDTgjN0G7NVHBQhVcgpyKZEGkYQkMc8PTY7twwIq3Liq46yNbwKcCp2zLAWHmHTPr28Nt9Z9hJQ4aRDFo_DBGvR8l-6FFflvlC7QVpE7nu8bnHMgNp6ZqQ8dMQSk7vuXIDCo_FNgQNR9-vfV82Yuz4O6_TaNSBhVArTuyietKWIXP2cHsZPVgCUg--BkAcYRhOOU6p",
-    author: currentUser,
-    date: "June 5, 2025"
+    id: heroPostData.id,
+    title: heroPostData.title,
+    excerpt: heroPostData.excerpt,
+    image: heroPostData.image,
+    author: heroPostData.author,
+    date: heroPostData.date
   };
 
   const heroSidePosts = posts.slice(0, 4);
@@ -21,7 +23,7 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-24">
-          <div className="lg:col-span-7 group relative h-[500px] lg:h-auto rounded-3xl overflow-hidden cursor-pointer">
+          <Link href={`/post/${heroPost.id}`} className="lg:col-span-7 group relative h-[500px] lg:h-auto rounded-3xl overflow-hidden cursor-pointer block">
             <img 
               src={heroPost.image} 
               alt="Hero" 
@@ -47,11 +49,11 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
           
           <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 content-between">
             {heroSidePosts.slice(0, 2).map((post) => (
-              <article key={post.id} className="flex gap-4 group cursor-pointer bg-white p-4 rounded-2xl hover:shadow-lg transition-all duration-300 items-center">
+              <Link href={`/post/${post.id}`} key={post.id} className="flex gap-4 group cursor-pointer bg-white p-4 rounded-2xl hover:shadow-lg transition-all duration-300 items-center">
                 <div className="w-24 h-24 shrink-0 rounded-xl overflow-hidden">
                   <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 </div>
@@ -64,7 +66,7 @@ export default function Home() {
                   </h3>
                   <span className="text-[10px] text-gray-400">{post.date}</span>
                 </div>
-              </article>
+              </Link>
             ))}
             {/* More prominent side cards */}
             {heroSidePosts.slice(2, 4).map((post) => (
@@ -85,7 +87,7 @@ export default function Home() {
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Read by Category</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {categories.map((cat) => (
-              <Link href={cat.id === 'tech' ? '/tech' : '/categories'} key={cat.id} className="group block">
+              <Link href={`/${cat.id}`} key={cat.id} className="group block">
                 <div className="aspect-square rounded-2xl overflow-hidden mb-3 relative">
                   <img src={cat.image} alt={cat.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div className={`absolute inset-0 ${cat.colorClass} mix-blend-multiply transition-opacity group-hover:opacity-80`}></div>

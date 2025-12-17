@@ -115,6 +115,14 @@ const Header: React.FC = () => {
                                         <Link href="/" className="text-sm font-semibold text-gray-600 hover:text-primary transition-colors">
                                             {item}
                                         </Link>
+                                    ) : item === 'About' ? (
+                                        <Link href="/about" className="text-sm font-semibold text-gray-600 hover:text-primary transition-colors">
+                                            {item}
+                                        </Link>
+                                    ) : item === 'Contact' ? (
+                                        <Link href="/contact" className="text-sm font-semibold text-gray-600 hover:text-primary transition-colors">
+                                            {item}
+                                        </Link>
                                     ) : (
                                 <button className="text-sm font-semibold text-gray-600 hover:text-primary flex items-center gap-1 transition-colors bg-transparent border-none cursor-pointer">
                                     {item}
