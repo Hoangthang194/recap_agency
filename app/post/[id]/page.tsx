@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import Link from 'next/link';
 import Newsletter from '@/components/Newsletter';
 import { posts } from '@/data';
@@ -12,7 +12,19 @@ interface PageProps {
 }
 
 export default function SinglePostPage({ params }: PageProps) {
-  const [post, setPost] = useState(posts[0]);
+  // Use React.use() to unwrap the Promise synchronously
+  const { id } = use(params);
+  
+  // Find post immediately
+  const foundPost = posts.find(p => p.id === id) || {
+    ...posts[0],
+    title: "Setting Up for a Great Year",
+    category: "Business",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB0ekLkhpQK-8g0j3hEdtyM1gSbMbaGAbEjSnhco4PxiSudZTUMA0jkxk8exUhWDinAn8O2O5O2Of-4NzBHTnaoL5rz5oXY_hKqV8Z0qoVE1OwQ-RMeNUdieQkvE0lD0KlyYE7izW_IOAMIVXNlov0Qckr57rj0c0A1oIvNCqah3eHU6e_0N_9afAC6w4LnDsD0QjmMyQMM5YgVhvGkW4ISrYyrfREjlQ8zE91K6venzpVPh0QYNgd1hq-x66NUgp3RYVOBQs6DTYrg",
+    excerpt: "You don't need a plan — just a few thoughts that can support clarity or spark fresh motivation for the journey ahead.",
+  };
+  
+  const [post, setPost] = useState(foundPost);
   const [loadedPosts, setLoadedPosts] = useState<typeof posts[0][]>([]);
   const [activeSection, setActiveSection] = useState('introduction');
   const [readingProgress, setReadingProgress] = useState(0);
@@ -36,30 +48,20 @@ export default function SinglePostPage({ params }: PageProps) {
     return Math.max(1, minutes);
   };
 
+  // Update post when id changes
   useEffect(() => {
-    const loadPost = async () => {
-      const resolvedParams = await params;
-      const foundPost = posts.find(p => p.id === resolvedParams.id) || {
-        ...posts[0],
-        title: "Setting Up for a Great Year",
-        category: "Business",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB0ekLkhpQK-8g0j3hEdtyM1gSbMbaGAbEjSnhco4PxiSudZTUMA0jkxk8exUhWDinAn8O2O5O2Of-4NzBHTnaoL5rz5oXY_hKqV8Z0qoVE1OwQ-RMeNUdieQkvE0lD0KlyYE7izW_IOAMIVXNlov0Qckr57rj0c0A1oIvNCqah3eHU6e_0N_9afAC6w4LnDsD0QjmMyQMM5YgVhvGkW4ISrYyrfREjlQ8zE91K6venzpVPh0QYNgd1hq-x66NUgp3RYVOBQs6DTYrg",
-        excerpt: "You don't need a plan — just a few thoughts that can support clarity or spark fresh motivation for the journey ahead.",
-      };
-      setPost(foundPost);
-      setLoadedPosts([]); // Reset loaded posts when post changes
-      
-      // Calculate reading time after content is rendered
-      setTimeout(() => {
-        if (contentRef.current) {
-          const time = calculateReadingTime(contentRef.current);
-          setEstimatedReadingTime(time);
-          setReadingTime(time);
-        }
-      }, 100);
-    };
-    loadPost();
-  }, [params]);
+    setPost(foundPost);
+    setLoadedPosts([]); // Reset loaded posts when post changes
+    
+    // Calculate reading time after content is rendered
+    setTimeout(() => {
+      if (contentRef.current) {
+        const time = calculateReadingTime(contentRef.current);
+        setEstimatedReadingTime(time);
+        setReadingTime(time);
+      }
+    }, 100);
+  }, [id, foundPost]);
 
   useEffect(() => {
     const handleScroll = () => {

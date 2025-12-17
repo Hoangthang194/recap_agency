@@ -22,3 +22,14 @@ export interface Category {
   colorClass: string;
   description?: string;
 }
+
+export interface City {
+  id: string;
+  name: string;
+  region: string;
+  icon: string;
+  image: string;
+  colorClass: string;
+  description: string;
+  categories: Category[];
+}

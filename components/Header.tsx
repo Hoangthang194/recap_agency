@@ -10,11 +10,27 @@ const Header: React.FC = () => {
     const pathname = usePathname();
     const [isVisible, setIsVisible] = useState(true);
     const [scrolled, setScrolled] = useState(false);
+    const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set());
     const lastScrollYRef = React.useRef(0);
     const tickingRef = React.useRef(false);
     
     // Get latest 4 posts for spotlight
     const spotlightPosts = posts.slice(0, 4);
+    
+    const toggleRegion = (region: string) => {
+        setExpandedRegions(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(region)) {
+                // Nếu đang mở thì đóng lại
+                newSet.delete(region);
+            } else {
+                // Nếu đang đóng thì đóng tất cả khu vực khác và mở khu vực này
+                newSet.clear();
+                newSet.add(region);
+            }
+            return newSet;
+        });
+    };
 
     useEffect(() => {
         const scrollPoint = 200; // Threshold như trong HTML mẫu
@@ -90,38 +106,147 @@ const Header: React.FC = () => {
                     </div>
 
                     <div className="hidden md:flex space-x-2 items-center">
-                        {['Demos', 'Features', 'Categories', 'Business'].map((item) => (
+                        {['Home', 'Travel', 'Posts', 'About', 'Contact'].map((item) => {
+                            const hasSubmenu = item === 'Travel' || item === 'Posts';
+                            
+                            return (
                              <div key={item} className="relative group px-4 py-2">
+                                    {item === 'Home' ? (
+                                        <Link href="/" className="text-sm font-semibold text-gray-600 hover:text-primary transition-colors">
+                                            {item}
+                                        </Link>
+                                    ) : (
                                 <button className="text-sm font-semibold text-gray-600 hover:text-primary flex items-center gap-1 transition-colors bg-transparent border-none cursor-pointer">
                                     {item}
+                                            {hasSubmenu && (
                                     <span className="material-icons-outlined text-[16px] transition-transform group-hover:rotate-180">expand_more</span>
+                                            )}
                                 </button>
+                                    )}
                                 
-                                {/* Mega Menu - Only for Categories for this demo */}
-                                {item === 'Categories' && (
-                                    <div className="absolute top-full -left-20 w-[800px] pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
+                                    {/* Mega Menu for Travel - Similar to Categories */}
+                                    {item === 'Travel' && (
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-[800px] pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
                                         <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden grid grid-cols-12">
-                                            {/* Categories List */}
+                                                {/* Travel Regions List */}
                                             <div className="col-span-6 p-8 bg-white">
-                                                <div className="space-y-6">
-                                                    {categories.slice(0, 5).map(cat => (
-                                                        <Link href={cat.id === 'tech' ? '/tech' : '/categories'} key={cat.id} className="flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-colors">
-                                                            <div className="mt-1">
-                                                                <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">{cat.icon}</span>
+                                                    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                                                        {/* Asia Section */}
+                                                        <div>
+                                                            <button
+                                                                onClick={() => toggleRegion('asia')}
+                                                                className="w-full flex items-center justify-between text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                                                            >
+                                                                <span>Asia</span>
+                                                                <span className={`material-icons-outlined text-[16px] transition-transform duration-300 ease-in-out ${expandedRegions.has('asia') ? 'rotate-180' : ''}`}>
+                                                                    expand_more
+                                                                </span>
+                                                            </button>
+                                                            <div 
+                                                                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                                                    expandedRegions.has('asia') 
+                                                                        ? 'max-h-96 opacity-100' 
+                                                                        : 'max-h-0 opacity-0'
+                                                                }`}
+                                                            >
+                                                                <div className="space-y-3 pl-4 pt-2">
+                                                                    <Link 
+                                                                        href="/categories" 
+                                                                        className={`flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
+                                                                            expandedRegions.has('asia') 
+                                                                                ? 'opacity-100 translate-y-0 delay-[75ms]' 
+                                                                                : 'opacity-0 -translate-y-2 delay-0'
+                                                                        }`}
+                                                                    >
+                                                                        <div className="mt-1">
+                                                                            <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">location_on</span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">Vietnam</h4>
+                                                                            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">Explore the beauty of Vietnam</p>
+                                                                        </div>
+                                                                    </Link>
+                                                                    <Link 
+                                                                        href="/categories" 
+                                                                        className={`flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
+                                                                            expandedRegions.has('asia') 
+                                                                                ? 'opacity-100 translate-y-0 delay-[150ms]' 
+                                                                                : 'opacity-0 -translate-y-2 delay-0'
+                                                                        }`}
+                                                                    >
+                                                                        <div className="mt-1">
+                                                                            <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">location_on</span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">Korea</h4>
+                                                                            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">Discover Korean culture</p>
+                                                                        </div>
+                                                                    </Link>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">{cat.name}</h4>
-                                                                <p className="text-xs text-gray-500 leading-relaxed max-w-xs">{cat.description}</p>
+                                                        </div>
+                                                        
+                                                        {/* Europe Section */}
+                                                        <div>
+                                                            <button
+                                                                onClick={() => toggleRegion('europe')}
+                                                                className="w-full flex items-center justify-between text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                                                            >
+                                                                <span>Europe</span>
+                                                                <span className={`material-icons-outlined text-[16px] transition-transform duration-300 ease-in-out ${expandedRegions.has('europe') ? 'rotate-180' : ''}`}>
+                                                                    expand_more
+                                                                </span>
+                                                            </button>
+                                                            <div 
+                                                                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                                                    expandedRegions.has('europe') 
+                                                                        ? 'max-h-96 opacity-100' 
+                                                                        : 'max-h-0 opacity-0'
+                                                                }`}
+                                                            >
+                                                                <div className="space-y-3 pl-4 pt-2">
+                                                                    <Link 
+                                                                        href="/categories" 
+                                                                        className={`flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
+                                                                            expandedRegions.has('europe') 
+                                                                                ? 'opacity-100 translate-y-0 delay-[75ms]' 
+                                                                                : 'opacity-0 -translate-y-2 delay-0'
+                                                                        }`}
+                                                                    >
+                                                                        <div className="mt-1">
+                                                                            <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">location_on</span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">France</h4>
+                                                                            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">Experience French elegance</p>
+                                                                        </div>
+                                                                    </Link>
+                                                                    <Link 
+                                                                        href="/categories" 
+                                                                        className={`flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
+                                                                            expandedRegions.has('europe') 
+                                                                                ? 'opacity-100 translate-y-0 delay-[150ms]' 
+                                                                                : 'opacity-0 -translate-y-2 delay-0'
+                                                                        }`}
+                                                                    >
+                                                                        <div className="mt-1">
+                                                                            <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">location_on</span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">Germany</h4>
+                                                                            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">Discover German heritage</p>
+                                                                        </div>
+                                                                    </Link>
+                                                                </div>
                                                             </div>
-                                                        </Link>
-                                                    ))}
+                                                        </div>
                                                 </div>
                                             </div>
                                             
                                             {/* Spotlight Section */}
                                             <div className="col-span-6 p-8 bg-gray-50/50">
                                                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Spotlight</h3>
-                                                <div className="space-y-5">
+                                                    <div className="space-y-5 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                                                     {spotlightPosts.map(post => (
                                                         <Link href={`/post/${post.id}`} key={post.id} className="flex gap-4 group/post">
                                                             <div className="flex-1">
@@ -140,8 +265,32 @@ const Header: React.FC = () => {
                                         </div>
                                     </div>
                                 )}
+                                    
+                                    {/* Simple Dropdown Menu for Posts - Centered on screen */}
+                                    {item === 'Posts' && (
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
+                                            <div className="bg-white rounded-xl shadow-lg border border-gray-100 w-[320px] max-h-[500px] overflow-y-auto custom-scrollbar py-3">
+                                                {categories.map(cat => (
+                                                    <Link 
+                                                        href={`/${cat.id}`} 
+                                                        key={cat.id}
+                                                        className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50 transition-colors group/item"
+                                                    >
+                                                        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-50 group-hover/item:bg-primary/10 transition-colors">
+                                                            <span className="material-icons-outlined text-gray-500 group-hover/item:text-primary transition-colors text-[20px]">{cat.icon}</span>
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-0.5">{cat.name}</h4>
+                                                            <p className="text-xs text-gray-500 leading-relaxed line-clamp-1">{cat.description}</p>
                             </div>
+                                                    </Link>
                         ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <div className="flex items-center gap-2 sm:gap-4">

@@ -1,4 +1,4 @@
-import { Post, Category, Author } from './types';
+import { Post, Category, Author, City } from './types';
 
 export const currentUser: Author = {
   name: "Rowan Blake",
@@ -137,5 +137,48 @@ export const posts: Post[] = [
     category: 'Arts',
     author: currentUser,
     date: 'June 8, 2025'
+  },
+];
+
+export const cities: City[] = [
+  {
+    id: 'vietnam',
+    name: 'Vietnam',
+    region: 'Asia',
+    icon: 'location_on',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDJ79sBnTpKqZYlaaniBy55_u4MmTgkVfYZXAAGkz6v6nE_LLfxhuwueJXISwgEFplFbkh-h72SLXUhhtxdAevBb2BYrQ3i0Dyn-2HTNYrO-Ma1ECGPtK2xzTBRXEGw9Y2Pr-NpJZy-JwJSscJGnvTNk0m3KK6CVveaQkPD1zJ5FwOQBGnfwONhdv72p6cWyXz9T7KC_qhBdpnJ7KTifXYVK_3L7q7iRkNzkvc2Izi5R3tZtg9AKreU9WnpDcl5U4bqBKjjfdNbHlsM',
+    colorClass: 'bg-red-400/30',
+    description: 'Explore the beauty of Vietnam',
+    categories: [categories[0], categories[2], categories[4]] // Tech, Sport, Education
+  },
+  {
+    id: 'korea',
+    name: 'Korea',
+    region: 'Asia',
+    icon: 'location_on',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAPX7XfIue5ew9mBidlCsn6NPkoBAPJUXEFDWlNsTjFKM1OKZ_nWkfYAlEIIlD4Iu8wNSNKtxw3y15N1zW9saBSEuFfBVgAoT5jDAwUHQ3bkQf-7oltaW50bhT_NOmwZRf8MB4vDZCa8YDMIcetsTCeumdJ2EXKMxNUGjCHeiOT1TN5JnvPcEnSX0sxWZJZkeRVwqQ2LvluUkGq1td-xJ-f313AubYYXXMILdmZcs4y4JapQb_5btqmz9jRThsnVf_P699ptt2mP_ae',
+    colorClass: 'bg-indigo-900/40',
+    description: 'Discover Korean culture',
+    categories: [categories[0], categories[1], categories[3]] // Tech, Startup, Business
+  },
+  {
+    id: 'france',
+    name: 'France',
+    region: 'Europe',
+    icon: 'location_on',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAGRo_C1FHV7zfmRFDZzvLwGaX19EVvAh6sJmEVkCvMpj_QU2orns59kJ0sNQAsA7QUyKltSYXCyhwSv2IhSvIimyyZDSVDTQjCUZ9UiGZGURseiTQvcTQQqYTxTXRgGfGvUCxPEt1Vl0SYOLlOk3PxsBDveKFopZwfDq1oceLVMBXvLeG-oMmr2lJP4qKFlWE-y4gPmLyuhPI3pb53H2C0PzZXQAGjzhCQzeVXVqx6O6QHlK1SkTWh-cAs23aOl-hbzOmgKDnfLmJ7',
+    colorClass: 'bg-orange-500/20',
+    description: 'Experience French elegance',
+    categories: [categories[3], categories[4], categories[5]] // Business, Education, Travel
+  },
+  {
+    id: 'germany',
+    name: 'Germany',
+    region: 'Europe',
+    icon: 'location_on',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC6vGpgwpnbGLX9wjrzgI9JThIX1mrklILsT97zyDgYhgx_rNCstWU-OUZMTAflluijImP5G7PlpNGx22yP_PiNVLJrCID2LBaEpNQj_ePUC86sBSoV_UP8PNAps4GcstyeENgxWAfDU95mTZDP7WRhJ6dPnNOe3if8pO8j1_u01tAv0vXmEsPZshUiRSINmkU-qicFbxuI2rWSEzmZj3Rezs2hG-SOq8T3F-qs8GNorT2uq55CX09ccRMPEQ81OFgJHeUa2zGj2u4N',
+    colorClass: 'bg-blue-600/30',
+    description: 'Discover German heritage',
+    categories: [categories[0], categories[1], categories[2]] // Tech, Startup, Sport
   },
 ];
