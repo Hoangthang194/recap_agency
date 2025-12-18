@@ -43,6 +43,8 @@ import {
 } from '@lexical/utils';
 import {
   $addUpdateTag,
+  $createParagraphNode,
+  $createTextNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -582,6 +584,39 @@ export default function ToolbarPlugin({
   const [modal, showModal] = useModal();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = () => {
+    if (typeof document === 'undefined') return;
+    const shell = document.querySelector('.editor-shell');
+    if (!shell) return;
+
+    const className = 'editor-shell-fullscreen';
+    if (shell.classList.contains(className)) {
+      shell.classList.remove(className);
+      setIsFullscreen(false);
+    } else {
+      shell.classList.add(className);
+      setIsFullscreen(true);
+    }
+  };
+
+  const insertAffiliateButtonBlock = () => {
+    if (!isEditable) return;
+
+    activeEditor.update(() => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
+
+      const paragraph = $createParagraphNode();
+      const text = $createTextNode('[Affiliate button here]');
+      paragraph.append(text);
+
+      selection.insertNodes([paragraph]);
+    });
+  };
 
   const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
     command: T,
@@ -1159,6 +1194,23 @@ export default function ToolbarPlugin({
             onChange={onBgColorSelect}
             title="bg color"
           />
+          <button
+            type="button"
+            disabled={!isEditable}
+            onClick={insertAffiliateButtonBlock}
+            className="toolbar-item spaced"
+            aria-label="Insert affiliate button block"
+            title="Insert affiliate button block">
+            <span className="text">Affiliate</span>
+          </button>
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="toolbar-item spaced"
+            aria-label={isFullscreen ? 'Thu nhỏ editor' : 'Mở rộng toàn trang'}
+            title={isFullscreen ? 'Thu nhỏ editor' : 'Mở rộng toàn trang'}>
+            <i className="icon fullscreen-icon" />
+          </button>
           <DropDown
             disabled={!isEditable}
             buttonClassName="toolbar-item spaced"

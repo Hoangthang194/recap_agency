@@ -1,4 +1,4 @@
-import { Post, Category, Author, City } from './types';
+import { Post, Category, Author, Country, City } from './types';
 
 export const currentUser: Author = {
   name: "Rowan Blake",
@@ -140,7 +140,8 @@ export const posts: Post[] = [
   },
 ];
 
-export const cities: City[] = [
+// Countries (used for travel regions)
+export const countries: Country[] = [
   {
     id: 'vietnam',
     name: 'Vietnam',
@@ -180,5 +181,101 @@ export const cities: City[] = [
     colorClass: 'bg-blue-600/30',
     description: 'Discover German heritage',
     categories: [categories[0], categories[1], categories[2]] // Tech, Startup, Sport
+  },
+];
+
+// Cities corresponding to each country
+export const cities: City[] = [
+  // Vietnam
+  {
+    id: 'hanoi',
+    name: 'Hanoi',
+    countryId: 'vietnam',
+    region: 'Asia',
+    icon: 'location_city',
+    image: categories[5].image, // reuse Travel image
+    colorClass: 'bg-emerald-500/20',
+    description: 'The capital city of Vietnam, rich in history, food, and street life.',
+    categories: [categories[0], categories[4], categories[5]], // Tech, Education, Travel
+  },
+  {
+    id: 'ho-chi-minh-city',
+    name: 'Ho Chi Minh City',
+    countryId: 'vietnam',
+    region: 'Asia',
+    icon: 'apartment',
+    image: categories[0].image, // reuse Tech image
+    colorClass: 'bg-red-500/20',
+    description: 'Vietnam’s largest city, fast-paced and packed with energy.',
+    categories: [categories[0], categories[1], categories[3]], // Tech, Startup, Business
+  },
+  // Korea
+  {
+    id: 'seoul',
+    name: 'Seoul',
+    countryId: 'korea',
+    region: 'Asia',
+    icon: 'location_city',
+    image: categories[1].image, // reuse Startup image
+    colorClass: 'bg-indigo-500/20',
+    description: 'A modern megacity where tech, culture, and tradition meet.',
+    categories: [categories[0], categories[1], categories[5]], // Tech, Startup, Travel
+  },
+  {
+    id: 'busan',
+    name: 'Busan',
+    countryId: 'korea',
+    region: 'Asia',
+    icon: 'beach_access',
+    image: categories[2].image, // reuse Sport image
+    colorClass: 'bg-sky-400/30',
+    description: 'A coastal city known for its beaches, seafood, and festivals.',
+    categories: [categories[2], categories[5]], // Sport, Travel
+  },
+  // France
+  {
+    id: 'paris',
+    name: 'Paris',
+    countryId: 'france',
+    region: 'Europe',
+    icon: 'location_city',
+    image: categories[3].image, // reuse Business image
+    colorClass: 'bg-pink-400/20',
+    description: 'The City of Light, with art, fashion, cafes, and iconic landmarks.',
+    categories: [categories[3], categories[4], categories[5]], // Business, Education, Travel
+  },
+  {
+    id: 'lyon',
+    name: 'Lyon',
+    countryId: 'france',
+    region: 'Europe',
+    icon: 'restaurant',
+    image: categories[4].image, // reuse Education image
+    colorClass: 'bg-orange-400/20',
+    description: 'France’s gastronomic capital with a relaxed, historic feel.',
+    categories: [categories[3], categories[4], categories[5]], // Business, Education, Travel
+  },
+  // Germany
+  {
+    id: 'berlin',
+    name: 'Berlin',
+    countryId: 'germany',
+    region: 'Europe',
+    icon: 'location_city',
+    image: categories[0].image, // reuse Tech image
+    colorClass: 'bg-slate-500/20',
+    description: 'A creative hub for startups, history, and modern culture.',
+    categories: [categories[0], categories[1], categories[3]], // Tech, Startup, Business
+  },
+  {
+    id: 'munich',
+    name: 'Munich',
+    countryId: 'germany',
+    region: 'Europe',
+    icon: 'park',
+    image: categories[2].image, // reuse Sport image
+    colorClass: 'bg-green-500/20',
+    description: 'Known for its beer gardens, parks, and proximity to the Alps.',
+    categories: [categories[2], categories[5]], // Sport, Travel
   },
 ];

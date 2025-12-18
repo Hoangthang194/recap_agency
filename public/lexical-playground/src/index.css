@@ -18,53 +18,45 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #eee;
-  padding: 0 20px;
+  background: transparent;
+  padding: 0;
 }
 
-header {
-  max-width: 580px;
-  margin: auto;
-  position: relative;
-  display: flex;
-  justify-content: center;
-}
-
-header a {
-  max-width: 220px;
-  margin: 20px 0 0 0;
-  display: block;
-}
-
-header img {
-  display: block;
-  height: 100%;
-  width: 100%;
-}
-
-header h1 {
-  text-align: left;
-  color: #333;
-  display: inline-block;
-  margin: 20px 0 0 0;
+.lexical-playground-wrapper header,
+.lexical-playground-wrapper .github-corner {
+  display: none !important; /* ẩn logo + link github ngoài lề */
 }
 
 .editor-shell {
-  margin: 20px auto;
-  border-radius: 2px;
-  max-width: 1100px;
+  margin: 0 auto;
+  border-radius: 10px;
+  max-width: 100%;
   color: #000;
   position: relative;
   line-height: 1.7;
   font-weight: 400;
 }
 
+.editor-shell-fullscreen {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  max-width: 100%;
+  padding: 24px 40px;
+  z-index: 50;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.editor-shell-fullscreen .editor-scroller {
+  min-height: calc(100vh - 220px);
+  max-height: calc(100vh - 140px);
+}
+
 .editor-shell .editor-container {
   background: #fff;
   position: relative;
-  display: block;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  border-radius: 10px;
 }
 
 .editor-shell .editor-container.tree-view {
@@ -77,27 +69,38 @@ header h1 {
 }
 
 .editor-scroller {
-  min-height: 150px;
+  min-height: calc(100vh - 260px); /* gần bằng chiều cao màn hình (trong layout thường) */
+  max-height: calc(100vh - 180px);
   max-width: 100%;
-  border: 0;
-  display: flex;
+  border-radius: 0 0 10px 10px;
+  border: 1px solid #e5e7eb;      /* viền xám nhạt, không đậm như hiện tại */
+  border-top: 0;
+  display: flex;              /* giúp vùng soạn thảo giãn theo chiều cao */
   position: relative;
   outline: 0;
+  overflow-y: auto;
   z-index: 0;
-  resize: vertical;
 }
 
 .editor {
-  flex: auto;
-  max-width: 100%;
+  resize: none;
   position: relative;
-  resize: vertical;
-  z-index: -1;
+  flex: 1 1 auto;
+  min-height: 100%;
+  z-index: 0;
 }
 
 .test-recorder-output {
   margin: 20px auto 20px auto;
   width: 100%;
+}
+
+/* Ẩn toàn bộ các nút/dev tools của playground (debug + test recorder) trong admin */
+.lexical-playground-wrapper .editor-dev-button,
+.lexical-playground-wrapper .test-recorder-toolbar,
+.lexical-playground-wrapper .test-recorder-output,
+.lexical-playground-wrapper .test-recorder-button {
+  display: none !important;
 }
 
 pre {
@@ -1420,18 +1423,12 @@ button.action-button:disabled {
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   margin-bottom: 1px;
-  background: #fff;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
   padding: 4px;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  vertical-align: middle;
-  overflow: auto;
-  height: 36px;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  overflow-y: hidden; /* disable vertical scroll*/
+  border-bottom: 1px solid #eee;
 }
 
 .toolbar .toolbar-item:focus {
@@ -1457,6 +1454,7 @@ button.toolbar-item:disabled {
 
 button.toolbar-item.spaced {
   margin-right: 2px;
+  margin-bottom: 4px; /* khoảng cách dọc giữa các nút trong thanh tool */
 }
 
 button.toolbar-item i.format {
@@ -1543,6 +1541,24 @@ button.toolbar-item.active i {
   width: 1px;
   background-color: #eee;
   margin: 0 4px;
+}
+
+.icon.fullscreen-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid #6b7280;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.icon.fullscreen-icon::before,
+.icon.fullscreen-icon::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid #6b7280;
+  border-radius: 2px;
 }
 
 .sticky-note-container {

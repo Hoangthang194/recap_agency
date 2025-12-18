@@ -15,7 +15,7 @@
   height: 15px;
   padding: 2px 4px;
   text-align: center;
-  width: 20px;
+  width: 40px; /* rộng hơn cho dễ nhìn và bớt sít nhau */
   align-self: center;
 }
 
@@ -53,5 +53,5 @@ button.font-decrement {
 
 button.font-increment {
   padding: 0px;
-  margin-left: 3px;
+  margin-left: 6px; /* tăng khoảng cách với input */
 }

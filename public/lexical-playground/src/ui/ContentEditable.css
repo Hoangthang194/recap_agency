@@ -12,8 +12,10 @@
   display: block;
   position: relative;
   outline: 0;
-  padding: 8px 46px 40px;
-  min-height: 150px;
+  padding: 12px 24px 40px;
+  min-height: 360px; /* thấp hơn một chút nhưng vẫn nhiều dòng */
+  height: auto;
+  box-sizing: border-box;
 }
 @media (max-width: 1025px) {
   .ContentEditable__root {

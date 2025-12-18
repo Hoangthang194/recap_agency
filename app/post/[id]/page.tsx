@@ -37,6 +37,7 @@ export default function SinglePostPage({ params }: PageProps) {
   const loadedPostsSectionRefs = useRef<{ [postId: string]: { [key: string]: HTMLElement | null } }>({});
   const endOfPostRefs = useRef<(HTMLDivElement | null)[]>([]);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
   // Calculate reading time based on content length
   const calculateReadingTime = (element: HTMLElement | null): number => {
@@ -48,9 +49,36 @@ export default function SinglePostPage({ params }: PageProps) {
     return Math.max(1, minutes);
   };
 
-  // Update post when id changes
+  // Update post when id changes (support preview mode)
   useEffect(() => {
-    setPost(foundPost);
+    let finalPost = foundPost
+
+    // Nếu là chế độ preview từ admin, lấy dữ liệu tạm trong sessionStorage
+    if (id === 'preview' && typeof window !== 'undefined') {
+      const stored = window.sessionStorage.getItem('postPreview')
+      if (stored && stored.trim().startsWith('{')) {
+        try {
+          const draft = JSON.parse(stored) as Partial<typeof foundPost> & { contentHtml?: string }
+          finalPost = {
+            ...foundPost,
+            ...draft,
+          }
+          setPreviewHtml(draft.contentHtml ?? null)
+        } catch {
+          // Nếu JSON hỏng, xóa khỏi sessionStorage để tránh lỗi lần sau
+          window.sessionStorage.removeItem('postPreview')
+          setPreviewHtml(null)
+        }
+      } else {
+        // Không có dữ liệu hợp lệ
+        window.sessionStorage.removeItem('postPreview')
+        setPreviewHtml(null)
+      }
+    } else {
+      setPreviewHtml(null)
+    }
+
+    setPost(finalPost);
     setLoadedPosts([]); // Reset loaded posts when post changes
     
     // Calculate reading time after content is rendered
@@ -61,7 +89,7 @@ export default function SinglePostPage({ params }: PageProps) {
         setReadingTime(time);
       }
     }, 100);
-  }, [id, foundPost]);
+  }, [id]);
 
   useEffect(() => {
     let ticking = false;
@@ -355,92 +383,157 @@ export default function SinglePostPage({ params }: PageProps) {
               <img src={post.image} alt="Illustration" className="w-full h-auto object-cover" />
             </div>
 
-            <p 
-              ref={(el) => { sectionRefs.current['introduction'] = el; }}
-              className="lead text-xl text-gray-600 mb-8"
-            >
-              Whether you're managing a product roadmap, organizing a work project, planning a travel itinerary, or preparing for an upcoming season, one of the biggest challenges is figuring out what to do first.
-            </p>
-            
-            <p>
-              In today's world, distractions are everywhere, resources are limited, and to-do lists seem to grow by the hour. Without a system to guide your choices, it's easy to get stuck in reactive mode—working hard but not necessarily working smart. That's where prioritization frameworks come in.
-            </p>
+            {id === 'preview' && previewHtml ? (
+              <div
+                className="prose prose-lg prose-blue max-w-none"
+                dangerouslySetInnerHTML={{ __html: previewHtml }}
+              />
+            ) : (
+              <>
+                <p
+                  ref={(el) => {
+                    sectionRefs.current['introduction'] = el
+                  }}
+                  className="lead text-xl text-gray-600 mb-8"
+                >
+                  Whether you're managing a product roadmap, organizing a work project, planning a travel itinerary,
+                  or preparing for an upcoming season, one of the biggest challenges is figuring out what to do first.
+                </p>
 
-            <h2 
-              ref={(el) => { sectionRefs.current['getting-lost'] = el; }}
-              className="text-3xl font-bold text-gray-900 mt-12 mb-6"
-            >
-              Getting Lost in "Busy Work"
-            </h2>
-            <p>
-              In every field—whether you're a student, entrepreneur, team leader, or solo professional—it's easy to confuse activity with progress. You might spend hours responding to emails, putting out fires, or finishing small tasks, all while delaying the things that could actually drive meaningful outcomes.
-            </p>
-            <p>
-              The solution isn't just about doing less; it's about doing what matters more. By identifying which actions have the greatest impact, you create space to focus deeply.
-            </p>
+                <p>
+                  In today's world, distractions are everywhere, resources are limited, and to-do lists seem to grow by
+                  the hour. Without a system to guide your choices, it's easy to get stuck in reactive mode—working
+                  hard but not necessarily working smart. That's where prioritization frameworks come in.
+                </p>
 
-            <h3 
-              ref={(el) => { sectionRefs.current['popular-frameworks'] = el; }}
-              className="text-xl font-bold text-gray-900 mt-8 mb-4"
-            >
-              Popular Frameworks to Get Started:
-            </h3>
-            <ul className="space-y-3 list-none pl-0">
-              {[
-                { title: "The Eisenhower Matrix", desc: "helps you evaluate every task by its urgency and importance so you can act on what truly matters now." },
-                { title: "The MoSCoW Method", desc: "sorts your projects into must-haves, should-haves, could-haves, and won't-haves." },
-                { title: "The RICE Model", desc: "evaluates reach, impact, confidence, and effort to prioritize based on value versus cost." },
-                { title: "The 80/20 Rule", desc: "reminds you to identify and invest in the small percentage of tasks that produce results." }
-              ].map((item, idx) => (
-                <li key={idx} className="flex items-start gap-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 flex-shrink-0"></span>
-                  <span><strong className="text-gray-900">{item.title}</strong> {item.desc}</span>
-                </li>
-              ))}
-            </ul>
+                <h2
+                  ref={(el) => {
+                    sectionRefs.current['getting-lost'] = el
+                  }}
+                  className="text-3xl font-bold text-gray-900 mt-12 mb-6"
+                >
+                  Getting Lost in "Busy Work"
+                </h2>
+                <p>
+                  In every field—whether you're a student, entrepreneur, team leader, or solo professional—it's easy to
+                  confuse activity with progress. You might spend hours responding to emails, putting out fires, or
+                  finishing small tasks, all while delaying the things that could actually drive meaningful outcomes.
+                </p>
+                <p>
+                  The solution isn't just about doing less; it's about doing what matters more. By identifying which
+                  actions have the greatest impact, you create space to focus deeply.
+                </p>
 
-            <h2 
-              ref={(el) => { sectionRefs.current['support-progress'] = el; }}
-              className="text-3xl font-bold text-gray-900 mt-12 mb-6"
-            >
-              Support Real Progress
-            </h2>
-            <p>
-              Prioritization frameworks give you a shared language for decision-making, especially in collaborative environments. Whether you're working with a product team, a class group, or across departments.
-            </p>
+                <h3
+                  ref={(el) => {
+                    sectionRefs.current['popular-frameworks'] = el
+                  }}
+                  className="text-xl font-bold text-gray-900 mt-8 mb-4"
+                >
+                  Popular Frameworks to Get Started:
+                </h3>
+                <ul className="space-y-3 list-none pl-0">
+                  {[
+                    {
+                      title: 'The Eisenhower Matrix',
+                      desc: 'helps you evaluate every task by its urgency and importance so you can act on what truly matters now.',
+                    },
+                    {
+                      title: 'The MoSCoW Method',
+                      desc: "sorts your projects into must-haves, should-haves, could-haves, and won't-haves.",
+                    },
+                    {
+                      title: 'The RICE Model',
+                      desc: 'evaluates reach, impact, confidence, and effort to prioritize based on value versus cost.',
+                    },
+                    {
+                      title: 'The 80/20 Rule',
+                      desc: 'reminds you to identify and invest in the small percentage of tasks that produce results.',
+                    },
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 flex-shrink-0"></span>
+                      <span>
+                        <strong className="text-gray-900">{item.title}</strong> {item.desc}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
 
-            <figure className="my-10">
-              <img className="w-full rounded-2xl shadow-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrgXpbgThq5fyGwb-w3JcOU9eHo0qrGLJWSE91EX4Ze9cWErY3oN8ARc3onv7rrJnLT-5nY76SSJav6rvx43Y1xYCMZU1zHW2u0fzUUu5dv_NnAqRJiTzUYRTfCgKjqUTrD47pw8hWp48VoSC83UZzqLuvSIypJazn3hvLCTJmi0ixgt8v9QR4Nrhl7u-fj95RM02xSe6HoJ4uX46q-4cKq3HaCNpvhulUtTbWtuzPEigGh340g36U2k_PYX2ClGw7Bupvf5Ty8r0W" alt="Monkey thinking" />
-              <figcaption className="text-center text-sm text-gray-400 mt-3 italic">Plans give yet mindfulness thick stars consider they.</figcaption>
-            </figure>
+                <h2
+                  ref={(el) => {
+                    sectionRefs.current['support-progress'] = el
+                  }}
+                  className="text-3xl font-bold text-gray-900 mt-12 mb-6"
+                >
+                  Support Real Progress
+                </h2>
+                <p>
+                  Prioritization frameworks give you a shared language for decision-making, especially in collaborative
+                  environments. Whether you're working with a product team, a class group, or across departments.
+                </p>
 
-            <h3 
-              ref={(el) => { sectionRefs.current['how-to-apply'] = el; }}
-              className="text-xl font-bold text-gray-900 mt-8 mb-4"
-            >
-              How to Apply Frameworks in Your Day-to-Day Workflow
-            </h3>
-            <p>The process is simple—and it works no matter your role, goals, or the type of work you're doing:</p>
-            <ol className="list-decimal pl-5 space-y-4 marker:text-primary marker:font-bold">
-              <li><strong>Start with a full list of tasks or ideas:</strong> Don't worry about order—just write down everything that's on your plate so you can see it clearly.</li>
-              <li><strong>Pick a framework that fits your context:</strong> Choose based on what you're prioritizing—Eisenhower for urgent items, MoSCoW for shared plans, or RICE for resource-heavy projects.</li>
-              <li><strong>Evaluate and categorize everything honestly:</strong> Use objective criteria and sort your tasks accordingly—this is where clarity and action begin to take shape.</li>
-            </ol>
+                <figure className="my-10">
+                  <img
+                    className="w-full rounded-2xl shadow-lg"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrgXpbgThq5fyGwb-w3JcOU9eHo0qrGLJWSE91EX4Ze9cWErY3oN8ARc3onv7rrJnLT-5nY76SSJav6rvx43Y1xYCMZU1zHW2u0fzUUu5dv_NnAqRJiTzUYRTfCgKjqUTrD47pw8hWp48VoSC83UZzqLuvSIypJazn3hvLCTJmi0ixgt8v9QR4Nrhl7u-fj95RM02xSe6HoJ4uX46q-4cKq3HaCNpvhulUtTbWtuzPEigGh340g36U2k_PYX2ClGw7Bupvf5Ty8r0W"
+                    alt="Monkey thinking"
+                  />
+                  <figcaption className="text-center text-sm text-gray-400 mt-3 italic">
+                    Plans give yet mindfulness thick stars consider they.
+                  </figcaption>
+                </figure>
 
-            <div className="my-12 p-8 bg-red-50 rounded-2xl border border-red-100 flex items-center justify-between flex-wrap gap-4">
-              <p className="font-bold text-gray-900 text-lg m-0 max-w-sm">Are you effectively managing tasks across different teams, languages, or global time zones?</p>
-              <button className="bg-white text-gray-900 px-6 py-2.5 rounded-lg text-sm font-bold shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors">Learn More</button>
-            </div>
+                <h3
+                  ref={(el) => {
+                    sectionRefs.current['how-to-apply'] = el
+                  }}
+                  className="text-xl font-bold text-gray-900 mt-8 mb-4"
+                >
+                  How to Apply Frameworks in Your Day-to-Day Workflow
+                </h3>
+                <p>
+                  The process is simple—and it works no matter your role, goals, or the type of work you're doing:
+                </p>
+                <ol className="list-decimal pl-5 space-y-4 marker:text-primary marker:font-bold">
+                  <li>
+                    <strong>Start with a full list of tasks or ideas:</strong> Don't worry about order—just write down
+                    everything that's on your plate so you can see it clearly.
+                  </li>
+                  <li>
+                    <strong>Pick a framework that fits your context:</strong> Choose based on what you're
+                    prioritizing—Eisenhower for urgent items, MoSCoW for shared plans, or RICE for resource-heavy
+                    projects.
+                  </li>
+                  <li>
+                    <strong>Evaluate and categorize everything honestly:</strong> Use objective criteria and sort your
+                    tasks accordingly—this is where clarity and action begin to take shape.
+                  </li>
+                </ol>
 
-            <h2 
-              ref={(el) => { sectionRefs.current['conclusion'] = el; }}
-              className="text-3xl font-bold text-gray-900 mt-12 mb-6"
-            >
-              Conclusion
-            </h2>
-            <p>
-              At its core, prioritization is about gaining control of your time, your work, and your attention. It empowers you to act with intention, not just urgency.
-            </p>
+                <div className="my-12 p-8 bg-red-50 rounded-2xl border border-red-100 flex items-center justify-between flex-wrap gap-4">
+                  <p className="font-bold text-gray-900 text-lg m-0 max-w-sm">
+                    Are you effectively managing tasks across different teams, languages, or global time zones?
+                  </p>
+                  <button className="bg-white text-gray-900 px-6 py-2.5 rounded-lg text-sm font-bold shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors">
+                    Learn More
+                  </button>
+                </div>
+
+                <h2
+                  ref={(el) => {
+                    sectionRefs.current['conclusion'] = el
+                  }}
+                  className="text-3xl font-bold text-gray-900 mt-12 mb-6"
+                >
+                  Conclusion
+                </h2>
+                <p>
+                  At its core, prioritization is about gaining control of your time, your work, and your attention. It
+                  empowers you to act with intention, not just urgency.
+                </p>
+              </>
+            )}
             
             {/* Post Footer - Metadata, Share, Navigation, Comments */}
             <div className="mt-12 pt-8 border-t border-gray-100">

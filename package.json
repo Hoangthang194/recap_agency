@@ -9,17 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@lexical/html": "^0.39.0",
+    "@lexical/react": "^0.39.0",
+    "date-fns": "^3.6.0",
+    "lexical": "^0.39.0",
+    "next": "^15.1.0",
     "react": "^19.2.3",
+    "react-day-picker": "^8.10.1",
     "react-dom": "^19.2.3",
-    "next": "^15.1.0"
+    "yjs": "^13.6.28"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.9",
     "@tailwindcss/typography": "^0.5.15",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",

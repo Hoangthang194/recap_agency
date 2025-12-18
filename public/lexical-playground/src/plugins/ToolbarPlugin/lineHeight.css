@@ -15,7 +15,7 @@
   height: 15px;
   padding: 2px 4px;
   text-align: center;
-  width: 20px;
+  width: 40px; /* rộng hơn cho đồng bộ với font-size và đỡ sít */
   align-self: center;
 }
 
@@ -31,6 +31,6 @@ button.line-height-decrement {
 
 button.line-height-increment {
   padding: 0px;
-  margin-left: 3px;
+  margin-left: 6px;
 }
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -8,7 +9,7 @@
 
 import type {JSX} from 'react';
 
-import 'react-day-picker/style.css';
+import 'react-day-picker/dist/style.css';
 import './DateTimeNode.css';
 
 // Stub implementations for @floating-ui/react
