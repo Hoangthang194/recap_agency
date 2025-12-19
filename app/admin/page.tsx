@@ -8,30 +8,29 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
-          Admin Dashboard
+          Bảng Điều Khiển Admin
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          High-level overview of content and accounts. This area is completely
-          independent from the public blog header/layout.
+          Tổng quan về nội dung và tài khoản. Khu vực này hoàn toàn độc lập với header/layout của blog công khai.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            Total Posts
+            Tổng Bài Viết
           </p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{totalPosts}</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            Drafts
+            Bản Nháp
           </p>
           <p className="mt-2 text-3xl font-bold text-gray-900">0</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            Users
+            Người Dùng
           </p>
           <p className="mt-2 text-3xl font-bold text-gray-900">1</p>
         </div>
@@ -39,15 +38,15 @@ export default function AdminDashboardPage() {
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-900">Latest posts</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Bài viết mới nhất</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-xs md:text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-gray-500">
-                <th className="py-2 pr-4 font-medium">Title</th>
-                <th className="py-2 pr-4 font-medium">Category</th>
-                <th className="py-2 pr-4 font-medium">Date</th>
+                <th className="py-2 pr-4 font-medium">Tiêu đề</th>
+                <th className="py-2 pr-4 font-medium">Danh mục</th>
+                <th className="py-2 pr-4 font-medium">Ngày</th>
               </tr>
             </thead>
             <tbody>

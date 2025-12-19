@@ -2,6 +2,7 @@ import Newsletter from '@/components/Newsletter'
 import PostCard from '@/components/PostCard'
 import { categories, posts, currentUser } from '@/data'
 import Link from 'next/link'
+import { getPostUrl } from '@/utils/post'
 
 export default function Home() {
   // Featured post is distinct - find the post with matching title
@@ -23,7 +24,7 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-24">
-          <Link href={`/post/${heroPost.id}`} className="lg:col-span-7 group relative h-[500px] lg:h-auto rounded-3xl overflow-hidden cursor-pointer block">
+          <Link href={getPostUrl(heroPostData)} className="lg:col-span-7 group relative h-[500px] lg:h-auto rounded-3xl overflow-hidden cursor-pointer block">
             <img 
               src={heroPost.image} 
               alt="Hero" 
@@ -53,7 +54,7 @@ export default function Home() {
           
           <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 content-between">
             {heroSidePosts.slice(0, 2).map((post) => (
-              <Link href={`/post/${post.id}`} key={post.id} className="flex gap-4 group cursor-pointer bg-white p-4 rounded-2xl hover:shadow-lg transition-all duration-300 items-center">
+              <Link href={getPostUrl(post)} key={post.id} className="flex gap-4 group cursor-pointer bg-white p-4 rounded-2xl hover:shadow-lg transition-all duration-300 items-center">
                 <div className="w-24 h-24 shrink-0 rounded-xl overflow-hidden">
                   <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 </div>
@@ -70,7 +71,7 @@ export default function Home() {
             ))}
             {/* More prominent side cards */}
             {heroSidePosts.slice(2, 4).map((post) => (
-              <Link href={`/post/${post.id}`} key={post.id} className="group relative h-48 rounded-2xl overflow-hidden block">
+              <Link href={getPostUrl(post)} key={post.id} className="group relative h-48 rounded-2xl overflow-hidden block">
                 <img src={post.image} alt={post.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors"></div>
                 <div className="absolute bottom-0 left-0 p-5">

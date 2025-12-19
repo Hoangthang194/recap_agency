@@ -48,25 +48,32 @@ export default function RootLayout({
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
                 >
                   <span className="material-icons-outlined text-base">space_dashboard</span>
-                  <span>Overview</span>
+                  <span>Tổng Quan</span>
                 </a>
                 <a
                   href="/admin/posts"
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
                 >
                   <span className="material-icons-outlined text-base">article</span>
-                  <span>Posts</span>
+                  <span>Bài Viết</span>
+                </a>
+                <a
+                  href="/admin/categories"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
+                >
+                  <span className="material-icons-outlined text-base">folder</span>
+                  <span>Danh Mục</span>
                 </a>
                 <a
                   href="/admin/users"
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
                 >
                   <span className="material-icons-outlined text-base">group</span>
-                  <span>Accounts</span>
+                  <span>Tài Khoản</span>
                 </a>
               </nav>
               <div className="px-4 py-4 border-t border-gray-200 text-xs text-gray-500">
-                Logged in as <span className="font-semibold text-gray-900">Admin</span>
+                Đăng nhập với tư cách <span className="font-semibold text-gray-900">Admin</span>
               </div>
             </aside>
 
@@ -78,10 +85,10 @@ export default function RootLayout({
                   <span className="text-base font-semibold text-gray-900">Recap Admin</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs md:text-sm">
-                  <span className="hidden md:inline text-gray-500">Dashboard</span>
+                  <span className="hidden md:inline text-gray-500">Bảng Điều Khiển</span>
                   <button className="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-100">
                     <span className="material-icons-outlined text-sm">logout</span>
-                    <span>Logout</span>
+                    <span>Đăng Xuất</span>
                   </button>
                 </div>
               </header>

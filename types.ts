@@ -3,15 +3,28 @@ export interface Author {
   avatar: string;
 }
 
+export interface SidebarBanner {
+  badge: string;
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonLink?: string;
+  backgroundColor?: string;
+}
+
 export interface Post {
   id: string;
   title: string;
   excerpt: string;
-  image: string;
+  image: string; // Banner image
+  thumbnail: string; // Thumbnail image
   category: string;
   author: Author;
   date: string;
   readTime?: string;
+  slug: string; // Required slug field
+  content?: string; // HTML content
+  sidebarBanner?: SidebarBanner; // Sidebar banner data
 }
 
 export interface Category {
@@ -21,6 +34,19 @@ export interface Category {
   image: string;
   colorClass: string;
   description?: string;
+  isCity?: boolean; // Phân biệt city với category
+  areaId?: string; // Area reference cho city
+  countryId?: string; // Country reference cho city
+}
+
+export interface Area {
+  id: string;
+  name: string;
+  region: string;
+  icon: string;
+  image: string;
+  colorClass: string;
+  description: string;
 }
 
 export interface Country {
@@ -32,16 +58,16 @@ export interface Country {
   colorClass: string;
   description: string;
   categories: Category[];
+  areaId?: string; // Optional area reference
 }
 
 export interface City {
   id: string;
   name: string;
-  countryId: string;
-  region: string;
   icon: string;
   image: string;
   colorClass: string;
   description: string;
-  categories: Category[];
+  areaId: string; // Area reference
+  countryId: string; // Country reference
 }

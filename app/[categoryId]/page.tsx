@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Newsletter from '@/components/Newsletter'
 import { posts, categories } from '@/data'
+import { getPostUrl } from '@/utils/post'
 
 interface CategoryPageProps {
   params: Promise<{
@@ -13,20 +14,21 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   // Await params before using
   const { categoryId } = await params
   
-  // Find category by id
+  // Find category or city by id
   const category = categories.find(cat => cat.id === categoryId)
   
-  // If category not found, show 404
+  // If category/city not found, show 404
   if (!category) {
     notFound()
   }
   
+  const isCity = category.isCity === true
   const categoryName = category.name
-  const categoryDescription = category.description
+  const categoryDescription = category.description || ''
   const categoryImage = category.image
   
-  // Filter posts by category name
-  const categoryPosts = posts.filter(post => post.category === categoryName)
+  // Filter posts: always filter by categoryId (works for both categories and cities)
+  const categoryPosts = posts.filter(post => post.category === categoryId)
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -35,7 +37,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <nav className="flex mb-8 text-xs font-medium text-gray-500">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span className="mx-2 text-gray-300">/</span>
-            <Link href="/" className="hover:text-primary transition-colors">Posts</Link>
+            <Link href={isCity ? "/categories" : "/"} className="hover:text-primary transition-colors">
+              {isCity ? "Cities" : "Posts"}
+            </Link>
             <span className="mx-2 text-gray-300">/</span>
             <span className="text-gray-900">{categoryName}</span>
           </nav>
@@ -59,7 +63,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
             {categoryPosts.map((post, idx) => (
               <div key={post.id} className="break-inside-avoid bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 group">
-                <Link href={`/post/${post.id}`}>
+                <Link href={getPostUrl(post)}>
                   <img src={post.image} alt={post.title} className="w-full object-cover" />
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-3">

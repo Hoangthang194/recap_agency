@@ -4,13 +4,14 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { categories, posts } from '@/data';
+import { categories, posts, areas, countries } from '@/data';
+import { getPostUrl } from '@/utils/post';
 
 const Header: React.FC = () => {
     const pathname = usePathname();
     const [isVisible, setIsVisible] = useState(true);
     const [scrolled, setScrolled] = useState(false);
-    const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set());
+    const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [mobileExpandedItems, setMobileExpandedItems] = useState<Set<string>>(new Set());
     const lastScrollYRef = React.useRef(0);
@@ -19,16 +20,16 @@ const Header: React.FC = () => {
     // Get latest 4 posts for spotlight
     const spotlightPosts = posts.slice(0, 4);
     
-    const toggleRegion = (region: string) => {
-        setExpandedRegions(prev => {
+    const toggleArea = (areaId: string) => {
+        setExpandedAreas(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(region)) {
+            if (newSet.has(areaId)) {
                 // Nếu đang mở thì đóng lại
-                newSet.delete(region);
+                newSet.delete(areaId);
             } else {
                 // Nếu đang đóng thì đóng tất cả khu vực khác và mở khu vực này
                 newSet.clear();
-                newSet.add(region);
+                newSet.add(areaId);
             }
             return newSet;
         });
@@ -119,8 +120,8 @@ const Header: React.FC = () => {
                                         className="object-contain h-8 w-auto"
                                         priority
                                     />
-                                </div>
-                            </Link>
+                            </div>
+                        </Link>
                         </h1>
                     </div>
 
@@ -151,122 +152,79 @@ const Header: React.FC = () => {
                                 </button>
                                     )}
                                 
-                                    {/* Mega Menu for Travel - Similar to Categories */}
+                                    {/* Mega Menu for Travel - Using Areas */}
                                     {item === 'Travel' && (
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 w-[800px] pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
                                         <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden grid grid-cols-12">
-                                                {/* Travel Regions List */}
+                                                {/* Travel Areas List */}
                                             <div className="col-span-6 p-8 bg-white">
                                                     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                                                        {/* Asia Section */}
-                                                        <div>
-                                                            <button
-                                                                onClick={() => toggleRegion('asia')}
-                                                                className="w-full flex items-center justify-between text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
-                                                            >
-                                                                <span>Asia</span>
-                                                                <span className={`material-icons-outlined text-[16px] transition-transform duration-300 ease-in-out ${expandedRegions.has('asia') ? 'rotate-180' : ''}`}>
-                                                                    expand_more
-                                                                </span>
-                                                            </button>
-                                                            <div 
-                                                                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                                                    expandedRegions.has('asia') 
-                                                                        ? 'max-h-96 opacity-100' 
-                                                                        : 'max-h-0 opacity-0'
-                                                                }`}
-                                                            >
-                                                                <div className="space-y-3 pl-4 pt-2">
-                                                                    <Link 
-                                                                        href="/categories?country=vietnam" 
-                                                                        className={`flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
-                                                                            expandedRegions.has('asia') 
-                                                                                ? 'opacity-100 translate-y-0 delay-[75ms]' 
-                                                                                : 'opacity-0 -translate-y-2 delay-0'
-                                                                        }`}
-                                                                    >
-                                                                        <div className="mt-1">
-                                                                            <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">location_on</span>
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">Vietnam</h4>
-                                                                            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">Explore the beauty of Vietnam</p>
-                                                                        </div>
-                                                                    </Link>
-                                                                    <Link 
-                                                                        href="/categories?country=korea" 
-                                                                        className={`flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
-                                                                            expandedRegions.has('asia') 
-                                                                                ? 'opacity-100 translate-y-0 delay-[150ms]' 
-                                                                                : 'opacity-0 -translate-y-2 delay-0'
-                                                                        }`}
-                                                                    >
-                                                                        <div className="mt-1">
-                                                                            <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">location_on</span>
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">Korea</h4>
-                                                                            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">Discover Korean culture</p>
-                                                                        </div>
-                                                                    </Link>
-                                                                </div>
+                                                        {/* Group areas by region */}
+                                                        {Array.from(new Set(areas.map(a => a.region))).map(region => {
+                                                            const regionAreas = areas.filter(a => a.region === region);
+                                                            return (
+                                                                <div key={region}>
+                                                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                                                                        {region}
+                                                                    </div>
+                                                                    {regionAreas.map((area, areaIndex) => {
+                                                                        const areaCountries = countries.filter(c => {
+                                                                            // Find cities in this area from categories
+                                                                            const areaCities = categories.filter(cat => cat.isCity && cat.areaId === area.id);
+                                                                            const countryIds = new Set(areaCities.map(city => city.countryId).filter((id): id is string => !!id));
+                                                                            return countryIds.has(c.id);
+                                                                        });
+                                                                        
+                                                                        return (
+                                                                            <div key={area.id} className="mb-4">
+                                                                                <button
+                                                                                    onClick={() => toggleArea(area.id)}
+                                                                                    className="w-full flex items-center justify-between text-sm font-bold text-gray-900 mb-2 hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                                                                                >
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <span className="material-icons-outlined text-base text-gray-400">{area.icon}</span>
+                                                                                        <span>{area.name}</span>
+                                                                                    </div>
+                                                                                    <span className={`material-icons-outlined text-[16px] transition-transform duration-300 ease-in-out ${expandedAreas.has(area.id) ? 'rotate-180' : ''}`}>
+                                                                                        expand_more
+                                                                                    </span>
+                                                                                </button>
+                                                                                <div 
+                                                                                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                                                                        expandedAreas.has(area.id) 
+                                                                                            ? 'max-h-96 opacity-100' 
+                                                                                            : 'max-h-0 opacity-0'
+                                                                                    }`}
+                                                                                >
+                                                                                    <div className="space-y-3 pl-6 pt-2">
+                                                                                        {areaCountries.map((country, countryIndex) => (
+                                                                                            <Link 
+                                                                                                key={country.id}
+                                                                                                href={`/categories?country=${country.id}`} 
+                                                                                                className={`flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
+                                                                                                    expandedAreas.has(area.id) 
+                                                                                                        ? 'opacity-100 translate-y-0' 
+                                                                                                        : 'opacity-0 -translate-y-2 delay-0'
+                                                                                                }`}
+                                                                                                style={{ transitionDelay: expandedAreas.has(area.id) ? `${(countryIndex + 1) * 75}ms` : '0ms' }}
+                                                                                            >
+                                                            <div className="mt-1">
+                                                                                                    <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">{country.icon}</span>
                                                             </div>
-                                                        </div>
-                                                        
-                                                        {/* Europe Section */}
-                                                        <div>
-                                                            <button
-                                                                onClick={() => toggleRegion('europe')}
-                                                                className="w-full flex items-center justify-between text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
-                                                            >
-                                                                <span>Europe</span>
-                                                                <span className={`material-icons-outlined text-[16px] transition-transform duration-300 ease-in-out ${expandedRegions.has('europe') ? 'rotate-180' : ''}`}>
-                                                                    expand_more
-                                                                </span>
-                                                            </button>
-                                                            <div 
-                                                                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                                                    expandedRegions.has('europe') 
-                                                                        ? 'max-h-96 opacity-100' 
-                                                                        : 'max-h-0 opacity-0'
-                                                                }`}
-                                                            >
-                                                                <div className="space-y-3 pl-4 pt-2">
-                                                                    <Link 
-                                                                        href="/categories?country=france" 
-                                                                        className={`flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
-                                                                            expandedRegions.has('europe') 
-                                                                                ? 'opacity-100 translate-y-0 delay-[75ms]' 
-                                                                                : 'opacity-0 -translate-y-2 delay-0'
-                                                                        }`}
-                                                                    >
-                                                                        <div className="mt-1">
-                                                                            <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">location_on</span>
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">France</h4>
-                                                                            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">Experience French elegance</p>
-                                                                        </div>
-                                                                    </Link>
-                                                                    <Link 
-                                                                        href="/categories?country=germany" 
-                                                                        className={`flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
-                                                                            expandedRegions.has('europe') 
-                                                                                ? 'opacity-100 translate-y-0 delay-[150ms]' 
-                                                                                : 'opacity-0 -translate-y-2 delay-0'
-                                                                        }`}
-                                                                    >
-                                                                        <div className="mt-1">
-                                                                            <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">location_on</span>
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">Germany</h4>
-                                                                            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">Discover German heritage</p>
-                                                                        </div>
-                                                                    </Link>
-                                                                </div>
+                                                            <div>
+                                                                                                    <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">{country.name}</h4>
+                                                                                                    <p className="text-xs text-gray-500 leading-relaxed max-w-xs">{country.description}</p>
                                                             </div>
-                                                        </div>
+                                                        </Link>
+                                                    ))}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            );
+                                                        })}
                                                 </div>
                                             </div>
                                             
@@ -275,7 +233,7 @@ const Header: React.FC = () => {
                                                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Spotlight</h3>
                                                     <div className="space-y-5 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                                                     {spotlightPosts.map(post => (
-                                                        <Link href={`/post/${post.id}`} key={post.id} className="flex gap-4 group/post">
+                                                        <Link href={getPostUrl(post)} key={post.id} className="flex gap-4 group/post">
                                                             <div className="flex-1">
                                                                 <h4 className="text-sm font-bold text-gray-900 group-hover/post:text-primary transition-colors leading-tight mb-2">
                                                                     {post.title}
@@ -431,50 +389,53 @@ const Header: React.FC = () => {
                                                 </span>
                                             </button>
 
-                                            {/* Travel simple submenu (countries -> Categories page with cities) */}
+                                            {/* Travel simple submenu (areas -> countries -> Categories page with cities) */}
                                             {item === 'Travel' && isExpanded && (
                                                 <div className="bg-gray-50 overflow-hidden">
-                                                    <div className="px-6 py-3 space-y-2 animate-slide-in-left">
-                                                        <Link
-                                                            href="/categories?country=vietnam"
-                                                            onClick={closeMobileMenu}
-                                                            className="flex items-center gap-3 text-sm text-gray-700 hover:text-primary transition-colors"
-                                                        >
-                                                            <span className="material-icons-outlined text-sm text-gray-400">
-                                                                location_on
-                                                            </span>
-                                                            <span>Vietnam</span>
-                                                        </Link>
-                                                        <Link
-                                                            href="/categories?country=korea"
-                                                            onClick={closeMobileMenu}
-                                                            className="flex items-center gap-3 text-sm text-gray-700 hover:text-primary transition-colors"
-                                                        >
-                                                            <span className="material-icons-outlined text-sm text-gray-400">
-                                                                location_on
-                                                            </span>
-                                                            <span>Korea</span>
-                                                        </Link>
-                                                        <Link
-                                                            href="/categories?country=france"
-                                                            onClick={closeMobileMenu}
-                                                            className="flex items-center gap-3 text-sm text-gray-700 hover:text-primary transition-colors"
-                                                        >
-                                                            <span className="material-icons-outlined text-sm text-gray-400">
-                                                                public
-                                                            </span>
-                                                            <span>France</span>
-                                                        </Link>
-                                                        <Link
-                                                            href="/categories?country=germany"
-                                                            onClick={closeMobileMenu}
-                                                            className="flex items-center gap-3 text-sm text-gray-700 hover:text-primary transition-colors"
-                                                        >
-                                                            <span className="material-icons-outlined text-sm text-gray-400">
-                                                                public
-                                                            </span>
-                                                            <span>Germany</span>
-                                                        </Link>
+                                                    <div className="px-6 py-3 space-y-4 animate-slide-in-left">
+                                                        {/* Group areas by region */}
+                                                        {Array.from(new Set(areas.map(a => a.region))).map(region => {
+                                                            const regionAreas = areas.filter(a => a.region === region);
+                                                            return (
+                                                                <div key={region}>
+                                                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">
+                                                                        {region}
+                                                                    </div>
+                                                                    {regionAreas.map(area => {
+                                                                        const areaCountries = countries.filter(c => {
+                                                                            // Find cities in this area from categories
+                                                                            const areaCities = categories.filter(cat => cat.isCity && cat.areaId === area.id);
+                                                                            const countryIds = new Set(areaCities.map(city => city.countryId).filter((id): id is string => !!id));
+                                                                            return countryIds.has(c.id);
+                                                                        });
+                                                                        
+                                                                        return (
+                                                                            <div key={area.id} className="mb-3">
+                                                                                <div className="flex items-center gap-2 px-2 mb-1">
+                                                                                    <span className="material-icons-outlined text-sm text-gray-400">{area.icon}</span>
+                                                                                    <span className="text-xs font-semibold text-gray-600">{area.name}</span>
+                                                                                </div>
+                                                                                <div className="pl-6 space-y-1">
+                                                                                    {areaCountries.map(country => (
+                                                                                        <Link
+                                                                                            key={country.id}
+                                                                                            href={`/categories?country=${country.id}`}
+                                                                                            onClick={closeMobileMenu}
+                                                                                            className="flex items-center gap-3 text-sm text-gray-700 hover:text-primary transition-colors"
+                                                                                        >
+                                                                                            <span className="material-icons-outlined text-sm text-gray-400">
+                                                                                                {country.icon}
+                                                                                            </span>
+                                                                                            <span>{country.name}</span>
+                                                                                        </Link>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             )}

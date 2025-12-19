@@ -24,10 +24,10 @@ export default function AdminPostsPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
-            Manage Posts
+            Quản Lý Bài Viết
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Search, filter, and manage blog posts. (Front-end only demo, no real writes.)
+            Tìm kiếm, lọc và quản lý bài viết blog. (Chỉ demo front-end, không có ghi thực tế.)
           </p>
         </div>
         <Link
@@ -35,7 +35,7 @@ export default function AdminPostsPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600"
         >
           <span className="material-icons-outlined text-sm">add</span>
-          <span>New Post</span>
+          <span>Bài Viết Mới</span>
         </Link>
       </div>
 
@@ -47,7 +47,7 @@ export default function AdminPostsPage() {
           </span>
           <input
             type="text"
-            placeholder="Search by title or excerpt..."
+            placeholder="Tìm kiếm theo tiêu đề hoặc mô tả..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -62,14 +62,14 @@ export default function AdminPostsPage() {
                 : 'border-gray-300 text-gray-700 hover:border-primary hover:text-primary'
             }`}
           >
-            All
+            Tất cả
           </button>
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setCategory(cat.name)}
+              onClick={() => setCategory(cat.id)}
               className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
-                category === cat.name
+                category === cat.id
                   ? 'bg-primary text-white border-primary'
                   : 'border-gray-300 text-gray-700 hover:border-primary hover:text-primary'
               }`}
@@ -86,11 +86,11 @@ export default function AdminPostsPage() {
           <table className="min-w-full text-left text-xs md:text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-gray-500">
-                <th className="py-2 pr-4 font-medium">Title</th>
-                <th className="py-2 pr-4 font-medium">Category</th>
-                <th className="py-2 pr-4 font-medium hidden md:table-cell">Excerpt</th>
-                <th className="py-2 pr-4 font-medium">Date</th>
-                <th className="py-2 pr-2 font-medium text-right">Actions</th>
+                <th className="py-2 pr-4 font-medium">Tiêu đề</th>
+                <th className="py-2 pr-4 font-medium">Danh mục</th>
+                <th className="py-2 pr-4 font-medium hidden md:table-cell">Mô tả</th>
+                <th className="py-2 pr-4 font-medium">Ngày</th>
+                <th className="py-2 pr-2 font-medium text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -108,10 +108,10 @@ export default function AdminPostsPage() {
                         href={`/admin/posts/${post.id}/edit`}
                         className="inline-flex items-center justify-center rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:border-primary hover:text-primary"
                       >
-                        Edit
+                        Sửa
                       </Link>
                       <button className="inline-flex items-center justify-center rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-600 hover:bg-rose-50">
-                        Delete
+                        Xóa
                       </button>
                     </div>
                   </td>
@@ -120,7 +120,7 @@ export default function AdminPostsPage() {
               {filteredPosts.length === 0 && (
                 <tr>
                   <td colSpan={5} className="py-6 text-center text-xs text-gray-500">
-                    No posts match your filters.
+                    Không có bài viết nào khớp với bộ lọc của bạn.
                   </td>
                 </tr>
               )}

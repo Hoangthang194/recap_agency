@@ -36,15 +36,15 @@ export default function AdminUsersPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
-            Manage Accounts
+            Quản Lý Tài Khoản
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            View and manage admin / editor accounts. (Demo only, no real authentication.)
+            Xem và quản lý tài khoản admin / editor. (Chỉ demo, không có xác thực thực tế.)
           </p>
         </div>
         <button className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-800 border border-gray-300 hover:bg-gray-50">
           <span className="material-icons-outlined text-sm">person_add</span>
-          <span>Invite User</span>
+          <span>Mời Người Dùng</span>
         </button>
       </div>
 
@@ -53,11 +53,11 @@ export default function AdminUsersPage() {
           <table className="min-w-full text-left text-xs md:text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-gray-500">
-                <th className="py-2 pr-4 font-medium">Name</th>
+                <th className="py-2 pr-4 font-medium">Tên</th>
                 <th className="py-2 pr-4 font-medium">Email</th>
-                <th className="py-2 pr-4 font-medium">Role</th>
-                <th className="py-2 pr-4 font-medium">Status</th>
-                <th className="py-2 pr-2 font-medium text-right">Actions</th>
+                <th className="py-2 pr-4 font-medium">Vai trò</th>
+                <th className="py-2 pr-4 font-medium">Trạng thái</th>
+                <th className="py-2 pr-2 font-medium text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -82,10 +82,10 @@ export default function AdminUsersPage() {
                   <td className="py-2 pr-2 text-right">
                     <div className="inline-flex items-center gap-1">
                       <button className="inline-flex items-center justify-center rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:border-primary hover:text-primary">
-                        Edit
+                        Sửa
                       </button>
                       <button className="inline-flex items-center justify-center rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-600 hover:bg-rose-50">
-                        Disable
+                        Vô hiệu hóa
                       </button>
                     </div>
                   </td>

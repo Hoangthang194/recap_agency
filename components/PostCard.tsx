@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Post } from '@/types';
+import { getPostUrl } from '@/utils/post';
 
 interface PostCardProps {
   post: Post;
@@ -12,7 +13,7 @@ interface PostCardProps {
 const PostCard: React.FC<PostCardProps> = ({ post, className = '' }) => {
   return (
     <div className={`group flex flex-col h-full ${className}`}>
-      <Link href={`/post/${post.id}`} className="block overflow-hidden rounded-2xl mb-5 relative aspect-[4/3]">
+      <Link href={getPostUrl(post)} className="block overflow-hidden rounded-2xl mb-5 relative aspect-[4/3]">
         <img 
           src={post.image} 
           alt={post.title} 
@@ -26,7 +27,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, className = '' }) => {
              <span className="text-xs font-bold text-primary uppercase tracking-wide">{post.category}</span>
         </div>
 
-        <Link href={`/post/${post.id}`} className="block mb-3">
+        <Link href={getPostUrl(post)} className="block mb-3">
           <h3 className="text-xl font-bold text-gray-900 leading-snug group-hover:text-primary transition-colors">
             {post.title}
           </h3>

@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef, use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Newsletter from '@/components/Newsletter';
 import { posts } from '@/data';
+import { getPostUrl, findPostBySlugAndDate } from '@/utils/post';
 
 interface PageProps {
   params: Promise<{
@@ -14,15 +16,32 @@ interface PageProps {
 export default function SinglePostPage({ params }: PageProps) {
   // Use React.use() to unwrap the Promise synchronously
   const { id } = use(params);
+  const router = useRouter();
   
-  // Find post immediately
-  const foundPost = posts.find(p => p.id === id) || {
-    ...posts[0],
-    title: "Setting Up for a Great Year",
-    category: "Business",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB0ekLkhpQK-8g0j3hEdtyM1gSbMbaGAbEjSnhco4PxiSudZTUMA0jkxk8exUhWDinAn8O2O5O2Of-4NzBHTnaoL5rz5oXY_hKqV8Z0qoVE1OwQ-RMeNUdieQkvE0lD0KlyYE7izW_IOAMIVXNlov0Qckr57rj0c0A1oIvNCqah3eHU6e_0N_9afAC6w4LnDsD0QjmMyQMM5YgVhvGkW4ISrYyrfREjlQ8zE91K6venzpVPh0QYNgd1hq-x66NUgp3RYVOBQs6DTYrg",
-    excerpt: "You don't need a plan — just a few thoughts that can support clarity or spark fresh motivation for the journey ahead.",
-  };
+  // Find post immediately - check if id is in new format (year/month/day/slug)
+  let foundPost = posts.find(p => p.id === id);
+  
+  // If not found by id, try parsing as new URL format
+  if (!foundPost && id.includes('/')) {
+    const parts = id.split('/');
+    if (parts.length >= 4) {
+      const [year, month, day, ...slugParts] = parts;
+      const slug = slugParts.join('-');
+      foundPost = findPostBySlugAndDate(posts, year, month, day, slug);
+    }
+  }
+  
+  // Fallback to default post
+  if (!foundPost) {
+    foundPost = {
+      ...posts[0],
+      title: "Setting Up for a Great Year",
+      category: "Business",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB0ekLkhpQK-8g0j3hEdtyM1gSbMbaGAbEjSnhco4PxiSudZTUMA0jkxk8exUhWDinAn8O2O5O2Of-4NzBHTnaoL5rz5oXY_hKqV8Z0qoVE1OwQ-RMeNUdieQkvE0lD0KlyYE7izW_IOAMIVXNlov0Qckr57rj0c0A1oIvNCqah3eHU6e_0N_9afAC6w4LnDsD0QjmMyQMM5YgVhvGkW4ISrYyrfREjlQ8zE91K6venzpVPh0QYNgd1hq-x66NUgp3RYVOBQs6DTYrg",
+      thumbnail: "https://lh3.googleusercontent.com/aida-public/AB6AXuB0ekLkhpQK-8g0j3hEdtyM1gSbMbaGAbEjSnhco4PxiSudZTUMA0jkxk8exUhWDinAn8O2O5O2Of-4NzBHTnaoL5rz5oXY_hKqV8Z0qoVE1OwQ-RMeNUdieQkvE0lD0KlyYE7izW_IOAMIVXNlov0Qckr57rj0c0A1oIvNCqah3eHU6e_0N_9afAC6w4LnDsD0QjmMyQMM5YgVhvGkW4ISrYyrfREjlQ8zE91K6venzpVPh0QYNgd1hq-x66NUgp3RYVOBQs6DTYrg",
+      excerpt: "You don't need a plan — just a few thoughts that can support clarity or spark fresh motivation for the journey ahead.",
+    };
+  }
   
   const [post, setPost] = useState(foundPost);
   const [loadedPosts, setLoadedPosts] = useState<typeof posts[0][]>([]);
@@ -51,6 +70,17 @@ export default function SinglePostPage({ params }: PageProps) {
 
   // Update post when id changes (support preview mode)
   useEffect(() => {
+    // Redirect to new URL format if not preview
+    if (id !== 'preview' && foundPost && typeof window !== 'undefined') {
+      const newUrl = getPostUrl(foundPost);
+      const currentPath = window.location.pathname;
+      // Only redirect if we're on the old /post/[id] format
+      if (currentPath.startsWith('/post/') && currentPath !== newUrl) {
+        router.replace(newUrl);
+        return;
+      }
+    }
+
     let finalPost = foundPost
 
     // Nếu là chế độ preview từ admin, lấy dữ liệu tạm trong sessionStorage
@@ -246,6 +276,53 @@ export default function SinglePostPage({ params }: PageProps) {
               }
             }
           });
+
+          // Update URL based on which post is currently in viewport
+          const viewportCenter = windowHeight / 2;
+          let activePostId = post.id;
+          let maxVisibleArea = 0;
+
+          // Check main post visibility
+          if (mainContent) {
+            const contentRect = mainContent.getBoundingClientRect();
+            const visibleTop = Math.max(0, -contentRect.top);
+            const visibleBottom = Math.min(contentRect.height, windowHeight - contentRect.top);
+            const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+            const visibleArea = visibleHeight * (contentRect.width || 0);
+            
+            if (visibleArea > maxVisibleArea && contentRect.top < viewportCenter && contentRect.bottom > viewportCenter) {
+              maxVisibleArea = visibleArea;
+              activePostId = post.id;
+            }
+          }
+
+          // Check loaded posts visibility
+          loadedPosts.forEach((loadedPost) => {
+            const postContentElement = document.querySelector(`[data-post-id="${loadedPost.id}"]`) as HTMLElement;
+            if (postContentElement) {
+              const contentRect = postContentElement.getBoundingClientRect();
+              const visibleTop = Math.max(0, -contentRect.top);
+              const visibleBottom = Math.min(contentRect.height, windowHeight - contentRect.top);
+              const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+              const visibleArea = visibleHeight * (contentRect.width || 0);
+              
+              if (visibleArea > maxVisibleArea && contentRect.top < viewportCenter && contentRect.bottom > viewportCenter) {
+                maxVisibleArea = visibleArea;
+                activePostId = loadedPost.id;
+              }
+            }
+          });
+
+          // Update URL if different from current (using replaceState to avoid re-render)
+          if (activePostId !== id && activePostId !== 'preview' && typeof window !== 'undefined') {
+            const activePost = posts.find(p => p.id === activePostId);
+            if (activePost) {
+              const newUrl = getPostUrl(activePost);
+              if (window.location.pathname !== newUrl) {
+                window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+              }
+            }
+          }
           
           ticking = false;
         });
@@ -273,14 +350,15 @@ export default function SinglePostPage({ params }: PageProps) {
     }
   };
 
-  const tocItems = [
+  // Table of Contents - only show if content exists
+  const tocItems = post.content ? [
     { id: 'introduction', label: 'Introduction' },
     { id: 'getting-lost', label: 'Getting Lost in "Busy Work"' },
     { id: 'popular-frameworks', label: 'Popular Frameworks' },
     { id: 'support-progress', label: 'Support Real Progress' },
     { id: 'how-to-apply', label: 'How to Apply' },
     { id: 'conclusion', label: 'Conclusion' }
-  ];
+  ] : [];
 
   const currentIndex = posts.findIndex(p => p.id === post.id);
 
@@ -297,242 +375,132 @@ export default function SinglePostPage({ params }: PageProps) {
         </nav>
 
         <header className="mb-12">
-          <div className="flex gap-3 mb-6">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-primary border border-blue-100">
-              <span className="material-icons-outlined text-sm mr-1">trending_up</span> {post.category}
-            </span>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-600 border border-purple-100">
-              <span className="material-icons-outlined text-sm mr-1">rocket_launch</span> Startup
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6 leading-tight tracking-tight max-w-4xl">
-            {post.title}
-          </h1>
-          <p className="text-xl text-gray-500 leading-relaxed max-w-3xl mb-8">
-            {post.excerpt}
-          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
+            {/* Left Column - Title, Excerpt, Author */}
+            <div className="lg:col-span-7 flex flex-col">
+              <div className="flex gap-3 mb-6">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-primary border border-blue-100">
+                  <span className="material-icons-outlined text-sm mr-1">trending_up</span> {post.category}
+                </span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-600 border border-purple-100">
+                  <span className="material-icons-outlined text-sm mr-1">rocket_launch</span> Startup
+                </span>
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6 leading-tight tracking-tight">
+                {post.title}
+              </h1>
+              <p className="text-xl text-gray-500 leading-relaxed mb-8">
+                {post.excerpt}
+              </p>
 
-          <div className="flex items-center justify-between border-t border-b border-gray-100 py-6">
-            <div className="flex items-center gap-4">
-              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuARjQyt5m6EibE66fPtCPvGR-oppu85NOdqF0fiSOQIHske26b6b7_i8p9iU98ZOILoXHDDHDXLLrz6V4X_lzgQIdVu7ObfecdfdU2j1O7BqgZjK7TEQKPu3jwQttl5YJpKPJHT_7lj3-rNJte4QZpMpH2iKtBay6Wwd-cwDakGDqAv6EhVJD0RsBTuPN6AT8XH0L_Et-v8lVJeo1_rco3QrZQfOvDhZ1mOy9YdC1C9pWUUhSe9GBtXiDTwbm9IfXgd1q97McN9G29s" alt="Robert Bates" className="w-12 h-12 rounded-full object-cover" />
-              <div>
-                <p className="font-bold text-gray-900">Robert Bates</p>
-                <div className="flex items-center text-xs text-gray-500 font-medium gap-3">
-                  <span>May 6, 2020</span>
-                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                  <span className="flex items-center gap-1"><span className="material-icons-outlined text-xs">schedule</span> 6 min read</span>
+              <div className="flex items-center justify-between border-t border-b border-gray-100 py-6 mt-auto">
+                <div className="flex items-center gap-4">
+                  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuARjQyt5m6EibE66fPtCPvGR-oppu85NOdqF0fiSOQIHske26b6b7_i8p9iU98ZOILoXHDDHDXLLrz6V4X_lzgQIdVu7ObfecdfdU2j1O7BqgZjK7TEQKPu3jwQttl5YJpKPJHT_7lj3-rNJte4QZpMpH2iKtBay6Wwd-cwDakGDqAv6EhVJD0RsBTuPN6AT8XH0L_Et-v8lVJeo1_rco3QrZQfOvDhZ1mOy9YdC1C9pWUUhSe9GBtXiDTwbm9IfXgd1q97McN9G29s" alt="Robert Bates" className="w-12 h-12 rounded-full object-cover" />
+                  <div>
+                    <p className="font-bold text-gray-900">Robert Bates</p>
+                    <div className="flex items-center text-xs text-gray-500 font-medium gap-3">
+                      <span className="flex items-center gap-1">
+                        <span className="material-icons-outlined text-xs">comment</span> 0
+                      </span>
+                      <span>May 5, 2025</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <span className="material-icons-outlined text-sm">schedule</span>
+                  <span>{estimatedReadingTime} min read</span>
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary transition-colors">
-                <span className="material-icons-outlined text-sm">share</span>
-              </button>
-              <button className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary transition-colors">
-                <span className="material-icons-outlined text-sm">bookmark_border</span>
-              </button>
+
+            {/* Right Column - Thumbnail */}
+            <div className="lg:col-span-5 flex flex-col">
+              <div className="rounded-2xl overflow-hidden aspect-[4/3]">
+                <img src={post.thumbnail || post.image} alt={post.title} className="w-full h-full object-cover" />
+              </div>
+              {/* Share Buttons */}
+              <div className="mt-4 flex items-center gap-3">
+                <span className="text-xs text-gray-400 font-medium">SHARE</span>
+                <button className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white hover:bg-gray-800 transition-colors">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                </button>
+                <button className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white hover:bg-gray-800 transition-colors">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </button>
+                <button className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white hover:bg-gray-800 transition-colors">
+                  <span className="material-icons-outlined text-sm">link</span>
+                </button>
+              </div>
             </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className={`grid grid-cols-1 ${post.content ? 'lg:grid-cols-12' : 'lg:grid-cols-1'} gap-12`}>
           {/* Left Sidebar - Table of Contents */}
-          <aside className="hidden lg:block lg:col-span-3">
-            <div className="sticky top-28 space-y-6 animate-slide-in-left">
-              {/* Reading Progress */}
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 animate-fade-in">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="material-icons-outlined text-sm text-gray-400">schedule</span>
-                  <span className="text-xs font-bold text-gray-900">
-                    {estimatedReadingTime} min read
-                  </span>
+          {post.content && (
+            <aside className="hidden lg:block lg:col-span-3">
+              <div className="sticky top-28 space-y-6 animate-slide-in-left">
+                {/* Reading Progress */}
+                <div className="bg-white rounded-2xl p-4 border border-gray-100 animate-fade-in">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="material-icons-outlined text-sm text-gray-400">schedule</span>
+                    <span className="text-xs font-bold text-gray-900">
+                      {estimatedReadingTime} min read
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                    <div 
+                      className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${readingProgress}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                  <div 
-                    className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${readingProgress}%` }}
-                  ></div>
-                </div>
-              </div>
 
-              {/* Table of Contents */}
-              <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Contents</h4>
-                <nav className="space-y-4 border-l border-gray-100 pl-4">
-                  {tocItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => scrollToSection(item.id)}
-                      className={`block text-sm text-left w-full transition-colors ${
-                        activeSection === item.id
-                          ? 'font-bold text-primary border-l-2 border-primary -ml-[17px] pl-4'
-                          : 'text-gray-500 hover:text-primary'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </nav>
+                {/* Table of Contents - Only show if content exists */}
+                {tocItems.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Contents</h4>
+                    <nav className="space-y-4 border-l border-gray-100 pl-4">
+                      {tocItems.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => scrollToSection(item.id)}
+                          className={`block text-sm text-left w-full transition-colors ${
+                            activeSection === item.id
+                              ? 'font-bold text-primary border-l-2 border-primary -ml-[17px] pl-4'
+                              : 'text-gray-500 hover:text-primary'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
+                )}
               </div>
-            </div>
-          </aside>
+            </aside>
+          )}
 
           {/* Main Content */}
-          <div ref={contentRef} className="col-span-1 lg:col-span-6 prose prose-lg prose-blue max-w-none">
-            <div className="rounded-3xl overflow-hidden mb-12 shadow-2xl shadow-orange-100 animate-fade-in">
-              <img src={post.image} alt="Illustration" className="w-full h-auto object-cover" />
-            </div>
-
+          <div ref={contentRef} className={`col-span-1 ${post.content ? 'lg:col-span-6' : 'lg:col-span-12'} prose prose-lg prose-blue max-w-none`}>
             {id === 'preview' && previewHtml ? (
               <div
                 className="prose prose-lg prose-blue max-w-none"
                 dangerouslySetInnerHTML={{ __html: previewHtml }}
               />
+            ) : post.content ? (
+              <div
+                className="prose prose-lg prose-blue max-w-none"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
             ) : (
-              <>
-                <p
-                  ref={(el) => {
-                    sectionRefs.current['introduction'] = el
-                  }}
-                  className="lead text-xl text-gray-600 mb-8"
-                >
-                  Whether you're managing a product roadmap, organizing a work project, planning a travel itinerary,
-                  or preparing for an upcoming season, one of the biggest challenges is figuring out what to do first.
-                </p>
-
-                <p>
-                  In today's world, distractions are everywhere, resources are limited, and to-do lists seem to grow by
-                  the hour. Without a system to guide your choices, it's easy to get stuck in reactive mode—working
-                  hard but not necessarily working smart. That's where prioritization frameworks come in.
-                </p>
-
-                <h2
-                  ref={(el) => {
-                    sectionRefs.current['getting-lost'] = el
-                  }}
-                  className="text-3xl font-bold text-gray-900 mt-12 mb-6"
-                >
-                  Getting Lost in "Busy Work"
-                </h2>
-                <p>
-                  In every field—whether you're a student, entrepreneur, team leader, or solo professional—it's easy to
-                  confuse activity with progress. You might spend hours responding to emails, putting out fires, or
-                  finishing small tasks, all while delaying the things that could actually drive meaningful outcomes.
-                </p>
-                <p>
-                  The solution isn't just about doing less; it's about doing what matters more. By identifying which
-                  actions have the greatest impact, you create space to focus deeply.
-                </p>
-
-                <h3
-                  ref={(el) => {
-                    sectionRefs.current['popular-frameworks'] = el
-                  }}
-                  className="text-xl font-bold text-gray-900 mt-8 mb-4"
-                >
-                  Popular Frameworks to Get Started:
-                </h3>
-                <ul className="space-y-3 list-none pl-0">
-                  {[
-                    {
-                      title: 'The Eisenhower Matrix',
-                      desc: 'helps you evaluate every task by its urgency and importance so you can act on what truly matters now.',
-                    },
-                    {
-                      title: 'The MoSCoW Method',
-                      desc: "sorts your projects into must-haves, should-haves, could-haves, and won't-haves.",
-                    },
-                    {
-                      title: 'The RICE Model',
-                      desc: 'evaluates reach, impact, confidence, and effort to prioritize based on value versus cost.',
-                    },
-                    {
-                      title: 'The 80/20 Rule',
-                      desc: 'reminds you to identify and invest in the small percentage of tasks that produce results.',
-                    },
-                  ].map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 flex-shrink-0"></span>
-                      <span>
-                        <strong className="text-gray-900">{item.title}</strong> {item.desc}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <h2
-                  ref={(el) => {
-                    sectionRefs.current['support-progress'] = el
-                  }}
-                  className="text-3xl font-bold text-gray-900 mt-12 mb-6"
-                >
-                  Support Real Progress
-                </h2>
-                <p>
-                  Prioritization frameworks give you a shared language for decision-making, especially in collaborative
-                  environments. Whether you're working with a product team, a class group, or across departments.
-                </p>
-
-                <figure className="my-10">
-                  <img
-                    className="w-full rounded-2xl shadow-lg"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrgXpbgThq5fyGwb-w3JcOU9eHo0qrGLJWSE91EX4Ze9cWErY3oN8ARc3onv7rrJnLT-5nY76SSJav6rvx43Y1xYCMZU1zHW2u0fzUUu5dv_NnAqRJiTzUYRTfCgKjqUTrD47pw8hWp48VoSC83UZzqLuvSIypJazn3hvLCTJmi0ixgt8v9QR4Nrhl7u-fj95RM02xSe6HoJ4uX46q-4cKq3HaCNpvhulUtTbWtuzPEigGh340g36U2k_PYX2ClGw7Bupvf5Ty8r0W"
-                    alt="Monkey thinking"
-                  />
-                  <figcaption className="text-center text-sm text-gray-400 mt-3 italic">
-                    Plans give yet mindfulness thick stars consider they.
-                  </figcaption>
-                </figure>
-
-                <h3
-                  ref={(el) => {
-                    sectionRefs.current['how-to-apply'] = el
-                  }}
-                  className="text-xl font-bold text-gray-900 mt-8 mb-4"
-                >
-                  How to Apply Frameworks in Your Day-to-Day Workflow
-                </h3>
-                <p>
-                  The process is simple—and it works no matter your role, goals, or the type of work you're doing:
-                </p>
-                <ol className="list-decimal pl-5 space-y-4 marker:text-primary marker:font-bold">
-                  <li>
-                    <strong>Start with a full list of tasks or ideas:</strong> Don't worry about order—just write down
-                    everything that's on your plate so you can see it clearly.
-                  </li>
-                  <li>
-                    <strong>Pick a framework that fits your context:</strong> Choose based on what you're
-                    prioritizing—Eisenhower for urgent items, MoSCoW for shared plans, or RICE for resource-heavy
-                    projects.
-                  </li>
-                  <li>
-                    <strong>Evaluate and categorize everything honestly:</strong> Use objective criteria and sort your
-                    tasks accordingly—this is where clarity and action begin to take shape.
-                  </li>
-                </ol>
-
-                <div className="my-12 p-8 bg-red-50 rounded-2xl border border-red-100 flex items-center justify-between flex-wrap gap-4">
-                  <p className="font-bold text-gray-900 text-lg m-0 max-w-sm">
-                    Are you effectively managing tasks across different teams, languages, or global time zones?
-                  </p>
-                  <button className="bg-white text-gray-900 px-6 py-2.5 rounded-lg text-sm font-bold shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors">
-                    Learn More
-                  </button>
-                </div>
-
-                <h2
-                  ref={(el) => {
-                    sectionRefs.current['conclusion'] = el
-                  }}
-                  className="text-3xl font-bold text-gray-900 mt-12 mb-6"
-                >
-                  Conclusion
-                </h2>
-                <p>
-                  At its core, prioritization is about gaining control of your time, your work, and your attention. It
-                  empowers you to act with intention, not just urgency.
-                </p>
-              </>
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">Nội dung bài viết đang được cập nhật...</p>
+              </div>
             )}
             
             {/* Post Footer - Metadata, Share, Navigation, Comments */}
@@ -578,7 +546,7 @@ export default function SinglePostPage({ params }: PageProps) {
                {/* Prev/Next Navigation */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                  {currentIndex > 0 && (
-                   <Link href={`/post/${posts[currentIndex - 1].id}`} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
+                   <Link href={getPostUrl(posts[currentIndex - 1])} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
                      <div className="absolute inset-0 flex items-center justify-center">
                        <img src={posts[currentIndex - 1].image} alt={posts[currentIndex - 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
                      </div>
@@ -595,7 +563,7 @@ export default function SinglePostPage({ params }: PageProps) {
                    </Link>
                  )}
                  {currentIndex < posts.length - 1 && (
-                   <Link href={`/post/${posts[currentIndex + 1].id}`} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
+                   <Link href={getPostUrl(posts[currentIndex + 1])} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
                      <div className="absolute inset-0 flex items-center justify-center">
                        <img src={posts[currentIndex + 1].image} alt={posts[currentIndex + 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
                      </div>
@@ -625,7 +593,7 @@ export default function SinglePostPage({ params }: PageProps) {
                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Spotlight</h4>
                <div className="space-y-6">
                  {posts.slice(0, 4).map((spotlightPost) => (
-                   <Link href={`/post/${spotlightPost.id}`} key={spotlightPost.id} className="flex gap-4 group">
+                   <Link href={getPostUrl(spotlightPost)} key={spotlightPost.id} className="flex gap-4 group">
                      <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0">
                        <img src={spotlightPost.image} alt={spotlightPost.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                      </div>
@@ -666,7 +634,7 @@ export default function SinglePostPage({ params }: PageProps) {
                .filter(p => p.id !== post.id)
                .slice(0, 3)
                .map((relatedPost) => (
-                 <Link href={`/post/${relatedPost.id}`} key={relatedPost.id} className="group">
+                 <Link href={getPostUrl(relatedPost)} key={relatedPost.id} className="group">
                    <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
                      <div className="rounded-2xl overflow-hidden aspect-[3/2] mb-4">
                        <img src={relatedPost.image} alt={relatedPost.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -704,193 +672,139 @@ export default function SinglePostPage({ params }: PageProps) {
               className="mt-20 pt-10 border-t border-gray-100 animate-slide-up"
             >
               <header className="mb-12">
-                <div className="flex gap-3 mb-6">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-primary border border-blue-100">
-                    <span className="material-icons-outlined text-sm mr-1">trending_up</span> {loadedPost.category}
-                  </span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-600 border border-purple-100">
-                    <span className="material-icons-outlined text-sm mr-1">rocket_launch</span> Startup
-                  </span>
-                </div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6 leading-tight tracking-tight max-w-4xl">
-                  {loadedPost.title}
-                </h1>
-                <p className="text-xl text-gray-500 leading-relaxed max-w-3xl mb-8">
-                  {loadedPost.excerpt}
-                </p>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
+                  {/* Left Column - Title, Excerpt, Author */}
+                  <div className="lg:col-span-7 flex flex-col">
+                    <div className="flex gap-3 mb-6">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-primary border border-blue-100">
+                        <span className="material-icons-outlined text-sm mr-1">trending_up</span> {loadedPost.category}
+                      </span>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-600 border border-purple-100">
+                        <span className="material-icons-outlined text-sm mr-1">rocket_launch</span> Startup
+                      </span>
+                    </div>
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6 leading-tight tracking-tight">
+                      {loadedPost.title}
+                    </h1>
+                    <p className="text-xl text-gray-500 leading-relaxed mb-8">
+                      {loadedPost.excerpt}
+                    </p>
 
-                <div className="flex items-center justify-between border-t border-b border-gray-100 py-6">
-                  <div className="flex items-center gap-4">
-                    <img src={loadedPost.author.avatar} alt={loadedPost.author.name} className="w-12 h-12 rounded-full object-cover" />
-                    <div>
-                      <p className="font-bold text-gray-900">{loadedPost.author.name}</p>
-                      <div className="flex items-center text-xs text-gray-500 font-medium gap-3">
-                        <span>{loadedPost.date}</span>
-                        <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                        <span className="flex items-center gap-1">
-                          <span className="material-icons-outlined text-xs">schedule</span> {loadedPostsReadingTime[loadedPost.id] || estimatedReadingTime} min read
-                        </span>
+                    <div className="flex items-center justify-between border-t border-b border-gray-100 py-6 mt-auto">
+                      <div className="flex items-center gap-4">
+                        <img src={loadedPost.author.avatar} alt={loadedPost.author.name} className="w-12 h-12 rounded-full object-cover" />
+                        <div>
+                          <p className="font-bold text-gray-900">{loadedPost.author.name}</p>
+                          <div className="flex items-center text-xs text-gray-500 font-medium gap-3">
+                            <span className="flex items-center gap-1">
+                              <span className="material-icons-outlined text-xs">comment</span> 0
+                            </span>
+                            <span>{loadedPost.date}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <span className="material-icons-outlined text-sm">schedule</span>
+                        <span>{loadedPostsReadingTime[loadedPost.id] || estimatedReadingTime} min read</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary transition-colors">
-                      <span className="material-icons-outlined text-sm">share</span>
-                    </button>
-                    <button className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary transition-colors">
-                      <span className="material-icons-outlined text-sm">bookmark_border</span>
-                    </button>
+
+                  {/* Right Column - Thumbnail */}
+                  <div className="lg:col-span-5 flex flex-col">
+                    <div className="rounded-2xl overflow-hidden aspect-[4/3]">
+                      <img src={loadedPost.thumbnail || loadedPost.image} alt={loadedPost.title} className="w-full h-full object-cover" />
+                    </div>
+                    {/* Share Buttons */}
+                    <div className="mt-4 flex items-center gap-3">
+                      <span className="text-xs text-gray-400 font-medium">SHARE</span>
+                      <button className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white hover:bg-gray-800 transition-colors">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                      </button>
+                      <button className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white hover:bg-gray-800 transition-colors">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                      </button>
+                      <button className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white hover:bg-gray-800 transition-colors">
+                        <span className="material-icons-outlined text-sm">link</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </header>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+              <div className={`grid grid-cols-1 ${loadedPost.content ? 'lg:grid-cols-12' : 'lg:grid-cols-1'} gap-12`}>
                 {/* Left Sidebar - Table of Contents */}
-                <aside className="hidden lg:block lg:col-span-3">
-                  <div className="sticky top-28 space-y-6 animate-slide-in-left">
-                    {/* Reading Progress */}
-                    <div className="bg-white rounded-2xl p-4 border border-gray-100 animate-fade-in">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="material-icons-outlined text-sm text-gray-400">schedule</span>
-                        <span className="text-xs font-bold text-gray-900">
-                          {loadedPostsReadingTime[loadedPost.id] || estimatedReadingTime} min read
-                        </span>
+                {loadedPost.content && (
+                  <aside className="hidden lg:block lg:col-span-3">
+                    <div className="sticky top-28 space-y-6 animate-slide-in-left">
+                      {/* Reading Progress */}
+                      <div className="bg-white rounded-2xl p-4 border border-gray-100 animate-fade-in">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="material-icons-outlined text-sm text-gray-400">schedule</span>
+                          <span className="text-xs font-bold text-gray-900">
+                            {loadedPostsReadingTime[loadedPost.id] || estimatedReadingTime} min read
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
+                            style={{ width: `${loadedPostsProgress[loadedPost.id] || 0}%` }}
+                          ></div>
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                        <div 
-                          className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
-                          style={{ width: `${loadedPostsProgress[loadedPost.id] || 0}%` }}
-                        ></div>
-                      </div>
-                    </div>
 
-                    {/* Table of Contents */}
-                    <div>
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Contents</h4>
-                      <nav className="space-y-4 border-l border-gray-100 pl-4">
-                        {tocItems.map((item) => (
-                          <button
-                            key={item.id}
-                            onClick={() => {
-                              const element = loadedPostsSectionRefs.current[loadedPost.id]?.[item.id];
-                              if (element) {
-                                const headerOffset = 100;
-                                const elementPosition = element.getBoundingClientRect().top;
-                                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                                window.scrollTo({
-                                  top: offsetPosition,
-                                  behavior: 'smooth'
-                                });
-                              }
-                            }}
-                            className={`block text-sm text-left w-full transition-colors ${
-                              loadedPostsActiveSection[loadedPost.id] === item.id
-                                ? 'font-bold text-primary border-l-2 border-primary -ml-[17px] pl-4'
-                                : 'text-gray-500 hover:text-primary'
-                            }`}
-                          >
-                            {item.label}
-                          </button>
-                        ))}
-                      </nav>
+                      {/* Table of Contents - Only show if content exists */}
+                      {tocItems.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Contents</h4>
+                          <nav className="space-y-4 border-l border-gray-100 pl-4">
+                            {tocItems.map((item) => (
+                              <button
+                                key={item.id}
+                                onClick={() => {
+                                  const element = loadedPostsSectionRefs.current[loadedPost.id]?.[item.id];
+                                  if (element) {
+                                    const headerOffset = 100;
+                                    const elementPosition = element.getBoundingClientRect().top;
+                                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                                    window.scrollTo({
+                                      top: offsetPosition,
+                                      behavior: 'smooth'
+                                    });
+                                  }
+                                }}
+                                className={`block text-sm text-left w-full transition-colors ${
+                                  loadedPostsActiveSection[loadedPost.id] === item.id
+                                    ? 'font-bold text-primary border-l-2 border-primary -ml-[17px] pl-4'
+                                    : 'text-gray-500 hover:text-primary'
+                                }`}
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </nav>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </aside>
+                  </aside>
+                )}
 
                 {/* Main Content - Full Post */}
-                <div data-post-id={loadedPost.id} className="col-span-1 lg:col-span-6 prose prose-lg prose-blue max-w-none">
-                  <div key={`image-${loadedPost.id}-${index}`} className="rounded-3xl overflow-hidden mb-12 shadow-2xl shadow-orange-100 animate-fade-in">
-                    <img src={loadedPost.image} alt={loadedPost.title} className="w-full h-auto object-cover" />
-                  </div>
-
-                  <p 
-                    ref={(el) => { 
-                      if (!loadedPostsSectionRefs.current[loadedPost.id]) {
-                        loadedPostsSectionRefs.current[loadedPost.id] = {};
-                      }
-                      loadedPostsSectionRefs.current[loadedPost.id]['introduction'] = el; 
-                    }}
-                    className="lead text-xl text-gray-600 mb-8"
-                  >
-                    Whether you're managing a product roadmap, organizing a work project, planning a travel itinerary, or preparing for an upcoming season, one of the biggest challenges is figuring out what to do first.
-                  </p>
-                  
-                  <p>
-                    In today's world, distractions are everywhere, resources are limited, and to-do lists seem to grow by the hour. Without a system to guide your choices, it's easy to get stuck in reactive mode—working hard but not necessarily working smart. That's where prioritization frameworks come in.
-                  </p>
-
-                  <h2 
-                    ref={(el) => { 
-                      if (!loadedPostsSectionRefs.current[loadedPost.id]) {
-                        loadedPostsSectionRefs.current[loadedPost.id] = {};
-                      }
-                      loadedPostsSectionRefs.current[loadedPost.id]['getting-lost'] = el; 
-                    }}
-                    className="text-3xl font-bold text-gray-900 mt-12 mb-6"
-                  >
-                    Getting Lost in "Busy Work"
-                  </h2>
-                  <p>
-                    In every field—whether you're a student, entrepreneur, team leader, or solo professional—it's easy to confuse activity with progress. You might spend hours responding to emails, putting out fires, or finishing small tasks, all while delaying the things that could actually drive meaningful outcomes.
-                  </p>
-                  <p>
-                    The solution isn't just about doing less; it's about doing what matters more. By identifying which actions have the greatest impact, you create space to focus deeply.
-                  </p>
-
-                  <h3 
-                    ref={(el) => { 
-                      if (!loadedPostsSectionRefs.current[loadedPost.id]) {
-                        loadedPostsSectionRefs.current[loadedPost.id] = {};
-                      }
-                      loadedPostsSectionRefs.current[loadedPost.id]['popular-frameworks'] = el; 
-                    }}
-                    className="text-xl font-bold text-gray-900 mt-8 mb-4"
-                  >
-                    Popular Frameworks to Get Started:
-                  </h3>
-                  <ul className="space-y-3 list-none pl-0">
-                    {[
-                      { title: "The Eisenhower Matrix", desc: "helps you evaluate every task by its urgency and importance so you can act on what truly matters now." },
-                      { title: "The MoSCoW Method", desc: "sorts your projects into must-haves, should-haves, could-haves, and won't-haves." },
-                      { title: "The RICE Model", desc: "evaluates reach, impact, confidence, and effort to prioritize based on value versus cost." },
-                      { title: "The 80/20 Rule", desc: "reminds you to identify and invest in the small percentage of tasks that produce results." }
-                    ].map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 flex-shrink-0"></span>
-                        <span><strong className="text-gray-900">{item.title}</strong> {item.desc}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <h2 
-                    ref={(el) => { 
-                      if (!loadedPostsSectionRefs.current[loadedPost.id]) {
-                        loadedPostsSectionRefs.current[loadedPost.id] = {};
-                      }
-                      loadedPostsSectionRefs.current[loadedPost.id]['support-progress'] = el; 
-                    }}
-                    className="text-3xl font-bold text-gray-900 mt-12 mb-6"
-                  >
-                    Support Real Progress
-                  </h2>
-                  <p>
-                    Prioritization frameworks give you a shared language for decision-making, especially in collaborative environments. Whether you're working with a product team, a class group, or across departments.
-                  </p>
-
-                  <h2 
-                    ref={(el) => { 
-                      if (!loadedPostsSectionRefs.current[loadedPost.id]) {
-                        loadedPostsSectionRefs.current[loadedPost.id] = {};
-                      }
-                      loadedPostsSectionRefs.current[loadedPost.id]['conclusion'] = el; 
-                    }}
-                    className="text-3xl font-bold text-gray-900 mt-12 mb-6"
-                  >
-                    Conclusion
-                  </h2>
-                  <p>
-                    At its core, prioritization is about gaining control of your time, your work, and your attention. It empowers you to act with intention, not just urgency.
-                  </p>
+                <div data-post-id={loadedPost.id} className={`col-span-1 ${loadedPost.content ? 'lg:col-span-6' : 'lg:col-span-12'} prose prose-lg prose-blue max-w-none`}>
+                  {loadedPost.content ? (
+                    <div
+                      className="prose prose-lg prose-blue max-w-none"
+                      dangerouslySetInnerHTML={{ __html: loadedPost.content }}
+                    />
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500 text-lg">Nội dung bài viết đang được cập nhật...</p>
+                    </div>
+                  )}
                   
                   {/* Post Footer - Metadata, Share, Navigation, Comments */}
                   <div className="mt-12 pt-8 border-t border-gray-100">
@@ -941,7 +855,7 @@ export default function SinglePostPage({ params }: PageProps) {
                          return (
                            <>
                              {hasPrev && (
-                               <Link href={`/post/${posts[loadedPostIndex - 1].id}`} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
+                               <Link href={getPostUrl(posts[loadedPostIndex - 1])} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
                                  <div className="absolute inset-0 flex items-center justify-center">
                                    <img src={posts[loadedPostIndex - 1].image} alt={posts[loadedPostIndex - 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
                                  </div>
@@ -958,7 +872,7 @@ export default function SinglePostPage({ params }: PageProps) {
                                </Link>
                              )}
                              {hasNext && (
-                               <Link href={`/post/${posts[loadedPostIndex + 1].id}`} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
+                               <Link href={getPostUrl(posts[loadedPostIndex + 1])} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
                                  <div className="absolute inset-0 flex items-center justify-center">
                                    <img src={posts[loadedPostIndex + 1].image} alt={posts[loadedPostIndex + 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
                                  </div>
@@ -991,7 +905,7 @@ export default function SinglePostPage({ params }: PageProps) {
                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Spotlight</h4>
                      <div className="space-y-6">
                        {posts.slice(0, 4).map((spotlightPost) => (
-                         <Link href={`/post/${spotlightPost.id}`} key={spotlightPost.id} className="flex gap-4 group">
+                         <Link href={getPostUrl(spotlightPost)} key={spotlightPost.id} className="flex gap-4 group">
                            <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0">
                              <img src={spotlightPost.image} alt={spotlightPost.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                            </div>
@@ -1032,7 +946,7 @@ export default function SinglePostPage({ params }: PageProps) {
                      .filter(p => p.id !== loadedPost.id)
                      .slice(0, 3)
                      .map((relatedPost) => (
-                       <Link href={`/post/${relatedPost.id}`} key={relatedPost.id} className="group">
+                       <Link href={getPostUrl(relatedPost)} key={relatedPost.id} className="group">
                          <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
                            <div className="rounded-2xl overflow-hidden aspect-[3/2] mb-4">
                              <img src={relatedPost.image} alt={relatedPost.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
