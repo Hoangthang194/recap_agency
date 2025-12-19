@@ -14,10 +14,11 @@ export type LexicalEditorProps = {
   onChange?: (html: string) => void
 }
 
-export function LexicalEditor(_props: LexicalEditorProps) {
+export function LexicalEditor(props: LexicalEditorProps) {
+  
   return (
     <div className="lexical-playground-wrapper">
-      <PlaygroundApp />
+      <PlaygroundApp initialHtml={props.initialHtml} onChange={props.onChange} />
     </div>
   )
 }

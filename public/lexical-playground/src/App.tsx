@@ -25,6 +25,7 @@ import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
 import {ToolbarContext} from './context/ToolbarContext';
+import {LexicalEditorContext} from './context/LexicalEditorContext';
 import Editor from './Editor';
 import logo from './images/logo.svg';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
@@ -49,7 +50,12 @@ function $prepopulatedRichText() {
   }
 }
 
-function App(): JSX.Element {
+type AppProps = {
+  initialHtml?: string;
+  onChange?: (html: string) => void;
+};
+
+function App({initialHtml, onChange}: AppProps): JSX.Element {
   const {
     settings: {isCollab, emptyEditor, measureTypingPerf},
   } = useSettings();
@@ -72,38 +78,40 @@ function App(): JSX.Element {
   );
 
   return (
-    <LexicalCollaboration>
-      <LexicalExtensionComposer extension={app} contentEditable={null}>
-        <SharedHistoryContext>
-          <TableContext>
-            <ToolbarContext>
-              <header>
-                <a href="https://lexical.dev" target="_blank" rel="noreferrer">
-                  <img src={logo} alt="Lexical Logo" />
-                </a>
-              </header>
-              <div className="editor-shell">
-                <Editor />
-              </div>
-              <Settings />
-              {isDevPlayground ? <DocsPlugin /> : null}
-              {isDevPlayground ? <PasteLogPlugin /> : null}
-              {isDevPlayground ? <TestRecorderPlugin /> : null}
+    <LexicalEditorContext.Provider value={{initialHtml, onChange}}>
+      <LexicalCollaboration>
+        <LexicalExtensionComposer extension={app} contentEditable={null}>
+          <SharedHistoryContext>
+            <TableContext>
+              <ToolbarContext>
+                <header>
+                  <a href="https://lexical.dev" target="_blank" rel="noreferrer">
+                    <img src={logo} alt="Lexical Logo" />
+                  </a>
+                </header>
+                <div className="editor-shell">
+                  <Editor />
+                </div>
+                <Settings />
+                {isDevPlayground ? <DocsPlugin /> : null}
+                {isDevPlayground ? <PasteLogPlugin /> : null}
+                {isDevPlayground ? <TestRecorderPlugin /> : null}
 
-              {measureTypingPerf ? <TypingPerfPlugin /> : null}
-            </ToolbarContext>
-          </TableContext>
-        </SharedHistoryContext>
-      </LexicalExtensionComposer>
-    </LexicalCollaboration>
+                {measureTypingPerf ? <TypingPerfPlugin /> : null}
+              </ToolbarContext>
+            </TableContext>
+          </SharedHistoryContext>
+        </LexicalExtensionComposer>
+      </LexicalCollaboration>
+    </LexicalEditorContext.Provider>
   );
 }
 
-export default function PlaygroundApp(): JSX.Element {
+export default function PlaygroundApp({initialHtml, onChange}: AppProps): JSX.Element {
   return (
     <SettingsContext>
       <FlashMessageContext>
-        <App />
+        <App initialHtml={initialHtml} onChange={onChange} />
       </FlashMessageContext>
       <a
         href="https://github.com/facebook/lexical/tree/main/packages/lexical-playground"

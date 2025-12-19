@@ -1,17 +1,42 @@
+'use client'
+
+import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Newsletter from '@/components/Newsletter'
-import { countries, cities } from '@/data'
+import { useCategories } from '@/hooks/useCategories'
+import { countries } from '@/data'
 
-type CategoriesPageProps = {
-  searchParams?: {
-    country?: string
-  }
-}
+export default function CategoriesPage() {
+  const searchParams = useSearchParams()
+  const countryId = searchParams.get('country') || countries[0]?.id
+  const { categories, loading, fetchCategories } = useCategories()
+  
+  // Fetch all categories (including cities) on mount
+  useEffect(() => {
+    fetchCategories()
+  }, [fetchCategories])
 
-export default function CategoriesPage({ searchParams }: CategoriesPageProps) {
-  const countryId = searchParams?.country || countries[0]?.id
   const currentCountry = countries.find((c) => c.id === countryId) || countries[0]
-  const countryCities = cities.filter((city) => city.countryId === currentCountry.id)
+  
+  // Filter cities for the selected country
+  const countryCities = useMemo(() => {
+    return categories.filter((cat) => 
+      cat.isCity && cat.countryId === currentCountry.id
+    )
+  }, [categories, currentCountry.id])
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-12">
+            <div className="text-sm text-gray-500">Đang tải danh sách thành phố...</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -54,8 +79,13 @@ export default function CategoriesPage({ searchParams }: CategoriesPageProps) {
         </div>
 
         {/* Cities for selected country */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {countryCities.map((city) => (
+        {countryCities.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">Chưa có thành phố nào cho {currentCountry.name}.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            {countryCities.map((city) => (
             <Link key={city.id} href={`/${city.id}`} className="group">
               <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-gray-100 mb-5 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
                 <img
@@ -84,8 +114,9 @@ export default function CategoriesPage({ searchParams }: CategoriesPageProps) {
                 </div>
               </div>
             </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
       <Newsletter />
     </div>

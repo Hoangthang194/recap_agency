@@ -49,12 +49,15 @@ export function formatDatePath(date: Date): string {
 
 /**
  * Get post URL in format /recap/YYYY/MM/DD/slug
+ * Converts snake_case slug to kebab-case for URL
  */
 export function getPostUrl(post: Post): string {
   const slug = post.slug || generateSlug(post.title);
+  // Convert snake_case to kebab-case for URL
+  const urlSlug = slug.replace(/_/g, '-');
   const date = parseDate(post.date);
   const datePath = formatDatePath(date);
-  return `/recap/${datePath}/${slug}`;
+  return `/recap/${datePath}/${urlSlug}`;
 }
 
 /**

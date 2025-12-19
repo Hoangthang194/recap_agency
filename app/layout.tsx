@@ -6,6 +6,7 @@ import '../public/lexical-playground/src/index.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { usePathname } from 'next/navigation'
+import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -104,6 +105,30 @@ export default function RootLayout({
             <Footer />
           </div>
         )}
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#fff',
+              color: '#333',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            },
+            success: {
+              iconTheme: {
+                primary: '#3b82f6',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
       </body>
     </html>
   )

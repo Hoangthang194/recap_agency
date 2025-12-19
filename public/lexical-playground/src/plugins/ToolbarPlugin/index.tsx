@@ -84,6 +84,7 @@ import {
 } from '../../context/ToolbarContext';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
+import {$createAffiliateButtonNode} from '../../nodes/AffiliateButtonNode';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
@@ -610,11 +611,16 @@ export default function ToolbarPlugin({
         return;
       }
 
-      const paragraph = $createParagraphNode();
-      const text = $createTextNode('[Affiliate button here]');
-      paragraph.append(text);
+      const affiliateButtonNode = $createAffiliateButtonNode({
+        url: '',
+        text: 'Click here',
+        backgroundColor: '#3b82f6',
+        textColor: '#ffffff',
+        size: 'medium',
+      });
 
-      selection.insertNodes([paragraph]);
+      // Insert button inline (can be in same line with text)
+      selection.insertNodes([affiliateButtonNode]);
     });
   };
 

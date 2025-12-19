@@ -8,8 +8,10 @@ const dbConfig = {
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'recap_blog',
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 50, // Increased from 10 to handle more concurrent requests
   queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
 };
 
 // Create connection pool
@@ -34,13 +36,16 @@ export async function query<T = any>(
   sql: string,
   params?: any[]
 ): Promise<T> {
+  let connection;
   try {
-    const [results] = await pool.execute(sql, params);
+    // Use pool.execute which automatically handles connection management
+    const [results] = await pool.execute(sql, params || []);
     return results as T;
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
   }
+  // Note: pool.execute automatically releases the connection, so we don't need to manually release
 }
 
 // Get connection from pool (for transactions)

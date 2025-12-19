@@ -86,6 +86,9 @@ import TwitterPlugin from './plugins/TwitterPlugin';
 import {VersionsPlugin} from './plugins/VersionsPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
+import InitialHtmlPlugin from './plugins/InitialHtmlPlugin';
+import OnChangePlugin from './plugins/OnChangePlugin';
+import {useLexicalEditorContext} from './context/LexicalEditorContext';
 
 const COLLAB_DOC_ID = 'main';
 
@@ -121,6 +124,7 @@ export default function Editor(): JSX.Element {
       listStrictIndent,
     },
   } = useSettings();
+  const {initialHtml, onChange} = useLexicalEditorContext();
   const isEditable = useLexicalEditable();
   const placeholder = isCollab
     ? 'Enter some collaborative rich text...'
@@ -185,6 +189,8 @@ export default function Editor(): JSX.Element {
         {isMaxLength && <MaxLengthPlugin maxLength={30} />}
         <DragDropPaste />
         <AutoFocusPlugin />
+        {initialHtml && <InitialHtmlPlugin initialHtml={initialHtml} />}
+        {onChange && <OnChangePlugin onChange={onChange} />}
         {selectionAlwaysOnDisplay && <SelectionAlwaysOnDisplay />}
         <ClearEditorPlugin />
         <ComponentPickerPlugin />

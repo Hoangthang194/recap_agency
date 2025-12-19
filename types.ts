@@ -1,4 +1,5 @@
 export interface Author {
+  id: string;
   name: string;
   avatar: string;
 }
@@ -10,6 +11,7 @@ export interface SidebarBanner {
   buttonText: string;
   buttonLink?: string;
   backgroundColor?: string;
+  image?: string; // Banner image URL
 }
 
 export interface Post {

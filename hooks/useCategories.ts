@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Category } from '@/types'
 
 // API Response types
@@ -24,14 +24,14 @@ interface CreateCategoryInput {
   countryId?: string | null
 }
 
-interface UseCategoriesOptions {
+export interface UseCategoriesOptions {
   isCity?: boolean
   areaId?: string
   countryId?: string
   autoFetch?: boolean // Tự động fetch khi mount
 }
 
-interface UseCategoriesReturn {
+export interface UseCategoriesReturn {
   // Data
   categories: Category[]
   category: Category | null
@@ -46,6 +46,8 @@ interface UseCategoriesReturn {
   // Actions
   fetchCategories: (options?: UseCategoriesOptions) => Promise<void>
   createCategory: (input: CreateCategoryInput) => Promise<Category | null>
+  updateCategory: (id: string, input: CreateCategoryInput) => Promise<Category | null>
+  deleteCategory: (id: string) => Promise<boolean>
   getCategoryById: (id: string) => Promise<Category | null>
   
   // Utilities
@@ -92,8 +94,17 @@ export function useCategories(initialOptions?: UseCategoriesOptions): UseCategor
     }
   }, [])
 
+  // Track if a fetch is in progress to prevent duplicate calls
+  const fetchingRef = useRef(false)
+  
   // Fetch categories
   const fetchCategories = useCallback(async (options?: UseCategoriesOptions) => {
+    // Prevent multiple simultaneous fetches
+    if (loading || fetchingRef.current) {
+      return
+    }
+    
+    fetchingRef.current = true
     setLoading(true)
     setError(null)
     
@@ -114,6 +125,7 @@ export function useCategories(initialOptions?: UseCategoriesOptions): UseCategor
       console.error('Error fetching categories:', err)
     } finally {
       setLoading(false)
+      fetchingRef.current = false
     }
   }, [buildQueryString, transformCategory, initialOptions])
 
@@ -159,17 +171,15 @@ export function useCategories(initialOptions?: UseCategoriesOptions): UseCategor
     setError(null)
     
     try {
-      const response = await fetch(`/api/categories`)
-      const result: ApiResponse<Category[]> = await response.json()
+      const response = await fetch(`/api/categories/${id}`)
+      const result: ApiResponse<Category> = await response.json()
       
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to fetch categories')
+        throw new Error(result.error || 'Failed to fetch category')
       }
       
-      const foundCategory = (result.data || []).find(cat => cat.id === id)
-      
-      if (foundCategory) {
-        const transformed = transformCategory(foundCategory)
+      if (result.data) {
+        const transformed = transformCategory(result.data)
         setCategory(transformed)
         return transformed
       }
@@ -185,6 +195,78 @@ export function useCategories(initialOptions?: UseCategoriesOptions): UseCategor
     }
   }, [transformCategory])
 
+  // Update category
+  const updateCategory = useCallback(async (id: string, input: CreateCategoryInput): Promise<Category | null> => {
+    setCreating(true)
+    setError(null)
+    
+    try {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(input),
+      })
+      
+      const result: ApiResponse<Category> = await response.json()
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update category')
+      }
+      
+      const updatedCategory = transformCategory(result.data!)
+      
+      // Update in local state
+      setCategories(prev => prev.map(cat => cat.id === id ? updatedCategory : cat))
+      if (category?.id === id) {
+        setCategory(updatedCategory)
+      }
+      
+      return updatedCategory
+    } catch (err: any) {
+      const errorMessage = err.message || 'An error occurred while updating category'
+      setError(errorMessage)
+      console.error('Error updating category:', err)
+      return null
+    } finally {
+      setCreating(false)
+    }
+  }, [transformCategory, category])
+
+  // Delete category
+  const deleteCategory = useCallback(async (id: string): Promise<boolean> => {
+    setCreating(true)
+    setError(null)
+    
+    try {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: 'DELETE',
+      })
+      
+      const result: ApiResponse<any> = await response.json()
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to delete category')
+      }
+      
+      // Remove from local state
+      setCategories(prev => prev.filter(cat => cat.id !== id))
+      if (category?.id === id) {
+        setCategory(null)
+      }
+      
+      return true
+    } catch (err: any) {
+      const errorMessage = err.message || 'An error occurred while deleting category'
+      setError(errorMessage)
+      console.error('Error deleting category:', err)
+      return false
+    } finally {
+      setCreating(false)
+    }
+  }, [category])
+
   // Clear error
   const clearError = useCallback(() => {
     setError(null)
@@ -198,6 +280,8 @@ export function useCategories(initialOptions?: UseCategoriesOptions): UseCategor
     error,
     fetchCategories,
     createCategory,
+    updateCategory,
+    deleteCategory,
     getCategoryById,
     clearError,
   }

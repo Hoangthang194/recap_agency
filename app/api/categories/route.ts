@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
     const areaId = searchParams.get('areaId');
     const countryId = searchParams.get('countryId');
 
-    let sql = 'SELECT * FROM categories WHERE 1=1';
+    let sql = 'SELECT * FROM categories WHERE is_deleted = 0';
     const params: any[] = [];
 
     if (isCity !== null) {

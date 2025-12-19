@@ -108,60 +108,59 @@ export function InsertImageUploadedDialogBody({
   const [altText, setAltText] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<Array<{ fileName: string; url: string; path: string }>>([]);
+  const [loadingImages, setLoadingImages] = useState(false);
 
   const isDisabled = src === '' || isUploading;
+
+  // Load uploaded images
+  const loadUploadedImages = async () => {
+    setLoadingImages(true);
+    try {
+      const response = await fetch('/api/upload/list');
+      const result = await response.json();
+      if (result.success) {
+        setUploadedImages(result.data || []);
+      }
+    } catch (err) {
+      console.error('Error loading uploaded images:', err);
+    } finally {
+      setLoadingImages(false);
+    }
+  };
 
   const uploadImage = async (file: File) => {
     setIsUploading(true);
     setUploadError('');
     
     try {
-      // Create FormData for file upload
-      const uploadFormData = new FormData();
-      uploadFormData.append('image', file);
-      uploadFormData.append('postId', Date.now().toString()); // Generate unique ID
-      
-      // Upload image to API with authentication
-      const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-      const response = await fetch('/admin/api/upload-image', {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
         method: 'POST',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-        body: uploadFormData,
+        body: formData,
       });
-      
-      if (!response.ok) {
-        let errorMessage = 'Upload failed';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.details || 'Upload failed';
-          console.error('Upload error response:', errorData);
-        } catch (parseError) {
-          // If response is not JSON, try to get text
-          try {
-            const errorText = await response.text();
-            errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`;
-          } catch (textError) {
-            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-          }
-        }
-        throw new Error(errorMessage);
-      }
-      
+
       const result = await response.json();
-      console.log('Upload result:', result);
-      
-      // Check for both imageUrl (new format) and url (media format)
-      const imageUrl = result.imageUrl || result.url;
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      const imageUrl = result.url;
       
       if (imageUrl) {
-        console.log('Image URL:', imageUrl);
         const finalAltText = altText || file.name.replace(/\.[^/.]+$/, '');
         setSrc(imageUrl);
+        // Refresh uploaded images list if picker is open
+        if (showImagePicker) {
+          loadUploadedImages();
+        }
         // Auto-insert image into editor after successful upload
-        // This will dispatch INSERT_IMAGE_COMMAND and close the dialog
         onClick({altText: finalAltText, src: imageUrl});
       } else {
-        console.error('No image URL in result:', result);
         throw new Error('No image URL returned from server');
       }
     } catch (error) {
@@ -170,6 +169,14 @@ export function InsertImageUploadedDialogBody({
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const selectUploadedImage = (imgUrl: string, imgFileName: string) => {
+    setSrc(imgUrl);
+    if (!altText) {
+      setAltText(imgFileName.replace(/\.[^/.]+$/, ''));
+    }
+    setShowImagePicker(false);
   };
 
   const loadImage = (files: FileList | null) => {
@@ -200,12 +207,23 @@ export function InsertImageUploadedDialogBody({
 
   return (
     <>
-      <FileInput
-        label="Image Upload"
-        onChange={loadImage}
-        accept="image/*"
-        data-test-id="image-modal-file-upload"
-      />
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-end' }}>
+        <div style={{ flex: 1 }}>
+          <FileInput
+            label="Upload Ảnh"
+            onChange={loadImage}
+            accept="image/*"
+            data-test-id="image-modal-file-upload"
+          />
+        </div>
+        <Button
+          onClick={() => {
+            setShowImagePicker(true);
+            loadUploadedImages();
+          }}>
+          Chọn Ảnh Đã Upload
+        </Button>
+      </div>
       {isUploading && (
         <div style={{ padding: '10px', textAlign: 'center', color: '#666' }}>
           Đang upload ảnh...
@@ -227,7 +245,7 @@ export function InsertImageUploadedDialogBody({
       )}
       <TextInput
         label="Alt Text"
-        placeholder="Descriptive alternative text"
+        placeholder="Mô tả ảnh"
         onChange={setAltText}
         value={altText}
         data-test-id="image-modal-alt-text-input"
@@ -237,9 +255,120 @@ export function InsertImageUploadedDialogBody({
           data-test-id="image-modal-file-upload-btn"
           disabled={isDisabled}
           onClick={() => onClick({altText, src})}>
-          {isUploading ? 'Uploading...' : 'Confirm'}
+          {isUploading ? 'Đang upload...' : 'Chèn Ảnh'}
         </Button>
       </DialogActions>
+
+      {/* Image Picker Modal */}
+      {showImagePicker && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          }}
+          onClick={() => setShowImagePicker(false)}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              maxWidth: '800px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ padding: '24px', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#111827' }}>Chọn Ảnh Đã Upload</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Button
+                  onClick={loadUploadedImages}
+                  disabled={loadingImages}
+                  small>
+                  Làm mới
+                </Button>
+                <button
+                  onClick={() => setShowImagePicker(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '24px', padding: '0', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+              {loadingImages ? (
+                <div style={{ textAlign: 'center', padding: '48px' }}>
+                  <div style={{ fontSize: '14px', color: '#6b7280' }}>Đang tải danh sách ảnh...</div>
+                </div>
+              ) : uploadedImages.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px' }}>
+                  <div style={{ fontSize: '14px', color: '#6b7280' }}>Chưa có ảnh nào được upload</div>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '16px' }}>
+                  {uploadedImages.map((img) => (
+                    <div
+                      key={img.fileName}
+                      onClick={() => selectUploadedImage(img.url, img.fileName)}
+                      style={{
+                        position: 'relative',
+                        cursor: 'pointer',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: src === img.url ? '2px solid #3b82f6' : '2px solid #e5e7eb',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (src !== img.url) {
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (src !== img.url) {
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }
+                      }}
+                    >
+                      <div style={{ aspectRatio: '1', backgroundColor: '#f3f4f6' }}>
+                        <img
+                          src={img.url}
+                          alt={img.fileName}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                      {src === img.url && (
+                        <div style={{ position: 'absolute', top: '8px', right: '8px', color: '#3b82f6', backgroundColor: 'white', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                          ✓
+                        </div>
+                      )}
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)', padding: '8px' }}>
+                        <p style={{ fontSize: '11px', color: 'white', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{img.fileName}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                onClick={() => setShowImagePicker(false)}>
+                Đóng
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

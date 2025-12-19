@@ -4,11 +4,14 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { categories, posts, areas, countries } from '@/data';
+import { useCategories, usePosts } from '@/hooks';
+import { areas, countries } from '@/data';
 import { getPostUrl } from '@/utils/post';
 
 const Header: React.FC = () => {
     const pathname = usePathname();
+    const { categories, loading: categoriesLoading, fetchCategories } = useCategories();
+    const { posts, loading: postsLoading, fetchPosts } = usePosts();
     const [isVisible, setIsVisible] = useState(true);
     const [scrolled, setScrolled] = useState(false);
     const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
@@ -16,9 +19,29 @@ const Header: React.FC = () => {
     const [mobileExpandedItems, setMobileExpandedItems] = useState<Set<string>>(new Set());
     const lastScrollYRef = React.useRef(0);
     const tickingRef = React.useRef(false);
+    const hasFetchedCategories = React.useRef(false);
+    const hasFetchedPosts = React.useRef(false);
+    
+    // Fetch categories and posts on mount (only once)
+    useEffect(() => {
+        if (!hasFetchedCategories.current && !categoriesLoading) {
+            hasFetchedCategories.current = true;
+            fetchCategories();
+        }
+    }, []); // Empty dependency array - only run once on mount
+    
+    useEffect(() => {
+        if (!hasFetchedPosts.current && !postsLoading) {
+            hasFetchedPosts.current = true;
+            fetchPosts({ limit: 4 }); // Fetch latest 4 posts for spotlight
+        }
+    }, []); // Empty dependency array - only run once on mount
     
     // Get latest 4 posts for spotlight
     const spotlightPosts = posts.slice(0, 4);
+    
+    // Filter categories (non-cities) for Posts menu
+    const postCategories = categories.filter(cat => !cat.isCity);
     
     const toggleArea = (areaId: string) => {
         setExpandedAreas(prev => {
@@ -255,21 +278,31 @@ const Header: React.FC = () => {
                                     {item === 'Posts' && (
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
                                             <div className="bg-white rounded-xl shadow-lg border border-gray-100 w-[320px] max-h-[500px] overflow-y-auto custom-scrollbar py-3">
-                                                {categories.map(cat => (
-                                                    <Link 
-                                                        href={`/${cat.id}`} 
-                                                        key={cat.id}
-                                                        className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50 transition-colors group/item"
-                                                    >
-                                                        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-50 group-hover/item:bg-primary/10 transition-colors">
-                                                            <span className="material-icons-outlined text-gray-500 group-hover/item:text-primary transition-colors text-[20px]">{cat.icon}</span>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-0.5">{cat.name}</h4>
-                                                            <p className="text-xs text-gray-500 leading-relaxed line-clamp-1">{cat.description}</p>
-                            </div>
-                                                    </Link>
-                        ))}
+                                                {categoriesLoading ? (
+                                                    <div className="px-6 py-4 text-center text-sm text-gray-500">
+                                                        Đang tải...
+                                                    </div>
+                                                ) : postCategories.length === 0 ? (
+                                                    <div className="px-6 py-4 text-center text-sm text-gray-500">
+                                                        Chưa có danh mục nào
+                                                    </div>
+                                                ) : (
+                                                    postCategories.map(cat => (
+                                                        <Link 
+                                                            href={`/${cat.id}`} 
+                                                            key={cat.id}
+                                                            className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50 transition-colors group/item"
+                                                        >
+                                                            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-50 group-hover/item:bg-primary/10 transition-colors">
+                                                                <span className="material-icons-outlined text-gray-500 group-hover/item:text-primary transition-colors text-[20px]">{cat.icon}</span>
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-0.5">{cat.name}</h4>
+                                                                <p className="text-xs text-gray-500 leading-relaxed line-clamp-1">{cat.description}</p>
+                                                            </div>
+                                                        </Link>
+                                                    ))
+                                                )}
                                             </div>
                                         </div>
                                     )}
@@ -444,26 +477,36 @@ const Header: React.FC = () => {
                                             {item === 'Posts' && isExpanded && (
                                                 <div className="bg-gray-50 overflow-hidden">
                                                     <div className="px-6 py-3 space-y-1 animate-slide-in-left">
-                                                        {categories.map((cat) => (
-                                                            <Link
-                                                                key={cat.id}
-                                                                href={`/${cat.id}`}
-                                                                onClick={closeMobileMenu}
-                                                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white transition-colors"
-                                                            >
-                                                                <span className="material-icons-outlined text-gray-500 text-lg">
-                                                                    {cat.icon}
-                                                                </span>
-                                                                <div>
-                                                                    <div className="text-sm font-semibold text-gray-900">
-                                                                        {cat.name}
+                                                        {categoriesLoading ? (
+                                                            <div className="px-3 py-2.5 text-sm text-gray-500">
+                                                                Đang tải...
+                                                            </div>
+                                                        ) : postCategories.length === 0 ? (
+                                                            <div className="px-3 py-2.5 text-sm text-gray-500">
+                                                                Chưa có danh mục nào
+                                                            </div>
+                                                        ) : (
+                                                            postCategories.map((cat) => (
+                                                                <Link
+                                                                    key={cat.id}
+                                                                    href={`/${cat.id}`}
+                                                                    onClick={closeMobileMenu}
+                                                                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white transition-colors"
+                                                                >
+                                                                    <span className="material-icons-outlined text-gray-500 text-lg">
+                                                                        {cat.icon}
+                                                                    </span>
+                                                                    <div>
+                                                                        <div className="text-sm font-semibold text-gray-900">
+                                                                            {cat.name}
+                                                                        </div>
+                                                                        <div className="text-xs text-gray-500 line-clamp-1">
+                                                                            {cat.description}
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="text-xs text-gray-500 line-clamp-1">
-                                                                        {cat.description}
-                                                                    </div>
-                                                                </div>
-                                                            </Link>
-                                                        ))}
+                                                                </Link>
+                                                            ))
+                                                        )}
                                                     </div>
                                                 </div>
                                             )}

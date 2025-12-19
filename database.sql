@@ -17,8 +17,10 @@ CREATE TABLE `areas` (
   `image` TEXT NOT NULL,
   `color_class` VARCHAR(50) NOT NULL,
   `description` TEXT,
+  `is_deleted` BIT(1) DEFAULT 0 NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_is_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create Countries table
@@ -30,10 +32,12 @@ CREATE TABLE `countries` (
   `image` TEXT NOT NULL,
   `color_class` VARCHAR(50) NOT NULL,
   `description` TEXT,
+  `is_deleted` BIT(1) DEFAULT 0 NOT NULL,
   `area_id` VARCHAR(50),
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`area_id`) REFERENCES `areas`(`id`) ON DELETE SET NULL
+  FOREIGN KEY (`area_id`) REFERENCES `areas`(`id`) ON DELETE SET NULL,
+  INDEX `idx_is_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create Categories table (includes both categories and cities)
@@ -44,6 +48,7 @@ CREATE TABLE `categories` (
   `image` TEXT NOT NULL,
   `color_class` VARCHAR(50) NOT NULL,
   `description` TEXT,
+  `is_deleted` BIT(1) DEFAULT 0 NOT NULL,
   `is_city` BOOLEAN DEFAULT FALSE,
   `area_id` VARCHAR(50),
   `country_id` VARCHAR(50),
@@ -52,6 +57,7 @@ CREATE TABLE `categories` (
   FOREIGN KEY (`area_id`) REFERENCES `areas`(`id`) ON DELETE SET NULL,
   FOREIGN KEY (`country_id`) REFERENCES `countries`(`id`) ON DELETE SET NULL,
   INDEX `idx_is_city` (`is_city`),
+  INDEX `idx_is_deleted` (`is_deleted`),
   INDEX `idx_area_id` (`area_id`),
   INDEX `idx_country_id` (`country_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -61,8 +67,26 @@ CREATE TABLE `authors` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL,
   `avatar` TEXT NOT NULL,
+  `is_deleted` BIT(1) DEFAULT 0 NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_is_deleted` (`is_deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create Users table (for admin/editor/viewer management)
+CREATE TABLE `users` (
+  `id` VARCHAR(50) PRIMARY KEY,
+  `name` VARCHAR(100) NOT NULL,
+  `email` VARCHAR(255) NOT NULL UNIQUE,
+  `role` ENUM('admin', 'editor', 'viewer') NOT NULL DEFAULT 'viewer',
+  `status` ENUM('active', 'invited', 'suspended') NOT NULL DEFAULT 'invited',
+  `is_deleted` BIT(1) DEFAULT 0 NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_email` (`email`),
+  INDEX `idx_role` (`role`),
+  INDEX `idx_status` (`status`),
+  INDEX `idx_is_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create Posts table
@@ -79,6 +103,7 @@ CREATE TABLE `posts` (
   `slug` VARCHAR(255) NOT NULL UNIQUE,
   `content` LONGTEXT COMMENT 'HTML content from Lexical editor',
   `sidebar_banner` JSON COMMENT 'Sidebar banner data as JSON',
+  `is_deleted` BIT(1) DEFAULT 0 NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON DELETE RESTRICT,
@@ -86,7 +111,8 @@ CREATE TABLE `posts` (
   INDEX `idx_category_id` (`category_id`),
   INDEX `idx_author_id` (`author_id`),
   INDEX `idx_slug` (`slug`),
-  INDEX `idx_date` (`date`)
+  INDEX `idx_date` (`date`),
+  INDEX `idx_is_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert sample Areas data
@@ -111,11 +137,30 @@ INSERT INTO `categories` (`id`, `name`, `icon`, `image`, `color_class`, `descrip
 INSERT INTO `authors` (`id`, `name`, `avatar`) VALUES
 (1, 'Rowan Blake', 'https://lh3.googleusercontent.com/aida-public/AB6AXuCEWE4PWVi-noHBer7hGHoPTj9HHSHWkhCSm8jAIU7JRRLpAuDdFmPTmiklMA2fgMjbTiLdRnBV55W9xH6cwyLcOfNx3faVnhuIucoX9u4_OlGQLFuoUyono7PXfkKveBfJ1Awu5TNhlbhpVhe4egCmuSKSc4wk_tUi07posmV5U_WDxh8znK9HUNsrNdE4RiRxQa5-RNh1FIHRJu90o6a8AhqWMRtvk06Y6DJO7EE4u-wxfobXM_QLSDeYdMRIiuGskhhhh9TAhX0y');
 
+-- Insert sample Users data
+INSERT INTO `users` (`id`, `name`, `email`, `role`, `status`) VALUES
+('admin', 'Admin User', 'admin@recap.local', 'admin', 'active'),
+('content-editor', 'Content Editor', 'editor@recap.local', 'editor', 'invited');
+
 -- Insert sample Posts data
 INSERT INTO `posts` (`id`, `title`, `excerpt`, `image`, `thumbnail`, `category_id`, `author_id`, `date`, `slug`, `content`, `sidebar_banner`) VALUES
 ('1', 'Pitching Your Idea: A Guide to Presenting with Impact', 'Wherever you\'re headed, pause here to reset, reflect, and bring something meaningful with you.', 'https://lh3.googleusercontent.com/aida-public/AB6AXuCUKeEOzIhySMwVoKPIhACTUJbrVksfDlBAc0jXyJQrk8AJWzrF1y5OXlE4d0i2cBRxKpTSinmUyFt7Mj1Xj2L3m6KmsNBgA2uMpAYh3gCf0Itwjr0YbkC4TrNWpq0emAoeMyXk6YP62WL_U04RUiDW1ZucL75inIRfWakvJaeJITLmKl5NBEC1wDLpjwNiG7Gn6s0bXj7QBvnOrYSvA4WpL5kzPWGIK75vtLzlvXZ4thFQfEqAunPl8QYM-9lu9Q6CCHpK9_lhU60E', 'https://lh3.googleusercontent.com/aida-public/AB6AXuCUKeEOzIhySMwVoKPIhACTUJbrVksfDlBAc0jXyJQrk8AJWzrF1y5OXlE4d0i2cBRxKpTSinmUyFt7Mj1Xj2L3m6KmsNBgA2uMpAYh3gCf0Itwjr0YbkC4TrNWpq0emAoeMyXk6YP62WL_U04RUiDW1ZucL75inIRfWakvJaeJITLmKl5NBEC1wDLpjwNiG7Gn6s0bXj7QBvnOrYSvA4WpL5kzPWGIK75vtLzlvXZ4thFQfEqAunPl8QYM-9lu9Q6CCHpK9_lhU60E', 'business', 1, 'Aug 8, 2025', 'pitching_your_idea_a_guide_to_presenting_with_impact', '<p class="lead text-xl text-gray-600 mb-8">Whether you\'re managing a product roadmap, organizing a work project, planning a travel itinerary, or preparing for an upcoming season, one of the biggest challenges is figuring out what to do first.</p><p>In today\'s world, distractions are everywhere, resources are limited, and to-do lists seem to grow by the hour. Without a system to guide your choices, it\'s easy to get stuck in reactive mode—working hard but not necessarily working smart. That\'s where prioritization frameworks come in.</p><h2 class="text-3xl font-bold text-gray-900 mt-12 mb-6">Getting Lost in "Busy Work"</h2><p>In every field—whether you\'re a student, entrepreneur, team leader, or solo professional—it\'s easy to confuse activity with progress.</p>', JSON_OBJECT('badge', 'Ultimate Guide', 'title', 'Follow the\nThought Trail', 'description', 'Explore all topics and find the ones that matter to you.', 'buttonText', 'Explore Categories', 'buttonLink', '/categories', 'backgroundColor', '#4c1d95')),
 ('2', 'Turning Big Ideas into Real-World Achievements', 'Easy to reflect on and even easier to use — these thoughts can improve both action and intention.', 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-BEE3WsGEv3iXs9vnd2KUQAhlPyu1qccZUjkqMqlR1I5OeQKa9lcBlkqOKhDCO1PHqKWjuXaj3hnN8jyKT7aVhp_tMRO6b3nQ3PYdc9KKzf-J3x-ewaHmVJHKBsNyPdAIjb_oD5UCWjcvCk9nmfV8DusJs_qr1v2Tf_WNCV5k1qBFIqWVy1fxJ1d0mtJ29On6h09NNdWtS_3-S2sHI1cZ3RXXeBFCzxh5vegbdQGSokQ4uS6uMvS1GT-bQBUdqxABryHQdrDtOIqO', 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-BEE3WsGEv3iXs9vnd2KUQAhlPyu1qccZUjkqMqlR1I5OeQKa9lcBlkqOKhDCO1PHqKWjuXaj3hnN8jyKT7aVhp_tMRO6b3nQ3PYdc9KKzf-J3x-ewaHmVJHKBsNyPdAIjb_oD5UCWjcvCk9nmfV8DusJs_qr1v2Tf_WNCV5k1qBFIqWVy1fxJ1d0mtJ29On6h09NNdWtS_3-S2sHI1cZ3RXXeBFCzxh5vegbdQGSokQ4uS6uMvS1GT-bQBUdqxABryHQdrDtOIqO', 'tech', 1, 'Aug 5, 2025', 'turning_big_ideas_into_real_world_achievements', '<p class="lead text-xl text-gray-600 mb-8">Whether you\'re managing a product roadmap, organizing a work project, planning a travel itinerary, or preparing for an upcoming season, one of the biggest challenges is figuring out what to do first.</p><p>In today\'s world, distractions are everywhere, resources are limited, and to-do lists seem to grow by the hour.</p>', NULL),
 ('10', 'Exploring the Historic Streets of Hanoi', 'Discover the charm of Vietnam\'s capital city, from ancient temples to bustling street markets.', 'https://lh3.googleusercontent.com/aida-public/AB6AXuDJ79sBnTpKqZYlaaniBy55_u4MmTgkVfYZXAAGkz6v6nE_LLfxhuwueJXISwgEFplFbkh-h72SLXUhhtxdAevBb2BYrQ3i0Dyn-2HTNYrO-Ma1ECGPtK2xzTBRXEGw9Y2Pr-NpJZy-JwJSscJGnvTNk0m3KK6CVveaQkPD1zJ5FwOQBGnfwONhdv72p6cWyXz9T7KC_qhBdpnJ7KTifXYVK_3L7q7iRkNzkvc2Izi5R3tZtg9AKreU9WnpDcl5U4bqBKjjfdNbHlsM', 'https://lh3.googleusercontent.com/aida-public/AB6AXuDJ79sBnTpKqZYlaaniBy55_u4MmTgkVfYZXAAGkz6v6nE_LLfxhuwueJXISwgEFplFbkh-h72SLXUhhtxdAevBb2BYrQ3i0Dyn-2HTNYrO-Ma1ECGPtK2xzTBRXEGw9Y2Pr-NpJZy-JwJSscJGnvTNk0m3KK6CVveaQkPD1zJ5FwOQBGnfwONhdv72p6cWyXz9T7KC_qhBdpnJ7KTifXYVK_3L7q7iRkNzkvc2Izi5R3tZtg9AKreU9WnpDcl5U4bqBKjjfdNbHlsM', 'hanoi', 1, 'Aug 10, 2025', 'exploring_the_historic_streets_of_hanoi', '<p class="lead text-xl text-gray-600 mb-8">Hanoi, the capital of Vietnam, is a city where ancient traditions meet modern life in perfect harmony.</p><p>From the historic Old Quarter with its narrow streets and colonial architecture to the serene Hoan Kiem Lake, Hanoi offers a unique blend of culture, history, and vibrant street life.</p><h2 class="text-3xl font-bold text-gray-900 mt-12 mb-6">The Old Quarter Experience</h2><p>Wander through the maze of streets in the Old Quarter, each named after the goods once sold there.</p>', JSON_OBJECT('badge', 'City Guide', 'title', 'Discover\nHanoi', 'description', 'Explore the rich culture and history of Vietnam\'s capital.', 'buttonText', 'More Stories', 'buttonLink', '/hanoi', 'backgroundColor', '#059669'));
+
+-- Add is_deleted column to all tables (soft delete support)
+ALTER TABLE `areas` ADD COLUMN `is_deleted` BIT(1) DEFAULT 0 NOT NULL AFTER `description`;
+ALTER TABLE `countries` ADD COLUMN `is_deleted` BIT(1) DEFAULT 0 NOT NULL AFTER `description`;
+ALTER TABLE `categories` ADD COLUMN `is_deleted` BIT(1) DEFAULT 0 NOT NULL AFTER `description`;
+ALTER TABLE `authors` ADD COLUMN `is_deleted` BIT(1) DEFAULT 0 NOT NULL AFTER `avatar`;
+ALTER TABLE `posts` ADD COLUMN `is_deleted` BIT(1) DEFAULT 0 NOT NULL AFTER `sidebar_banner`;
+
+-- Add indexes for is_deleted for better query performance
+ALTER TABLE `areas` ADD INDEX `idx_is_deleted` (`is_deleted`);
+ALTER TABLE `countries` ADD INDEX `idx_is_deleted` (`is_deleted`);
+ALTER TABLE `categories` ADD INDEX `idx_is_deleted` (`is_deleted`);
+ALTER TABLE `authors` ADD INDEX `idx_is_deleted` (`is_deleted`);
+ALTER TABLE `posts` ADD INDEX `idx_is_deleted` (`is_deleted`);
 
 -- Display summary
 SELECT 'Database setup completed!' AS message;
