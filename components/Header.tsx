@@ -4,14 +4,15 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useCategories, usePosts } from '@/hooks';
-import { areas, countries } from '@/data';
+import { useCategories, usePosts, useAreas, useCountries } from '@/hooks';
 import { getPostUrl } from '@/utils/post';
 
 const Header: React.FC = () => {
     const pathname = usePathname();
     const { categories, loading: categoriesLoading, fetchCategories } = useCategories();
     const { posts, loading: postsLoading, fetchPosts } = usePosts();
+    const { areas, loading: areasLoading, fetchAreas } = useAreas();
+    const { countries, loading: countriesLoading, fetchCountries } = useCountries();
     const [isVisible, setIsVisible] = useState(true);
     const [scrolled, setScrolled] = useState(false);
     const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
@@ -21,6 +22,8 @@ const Header: React.FC = () => {
     const tickingRef = React.useRef(false);
     const hasFetchedCategories = React.useRef(false);
     const hasFetchedPosts = React.useRef(false);
+    const hasFetchedAreas = React.useRef(false);
+    const hasFetchedCountries = React.useRef(false);
     
     // Fetch categories and posts on mount (only once)
     useEffect(() => {
@@ -34,6 +37,22 @@ const Header: React.FC = () => {
         if (!hasFetchedPosts.current && !postsLoading) {
             hasFetchedPosts.current = true;
             fetchPosts({ limit: 4 }); // Fetch latest 4 posts for spotlight
+        }
+    }, []); // Empty dependency array - only run once on mount
+    
+    // Fetch areas on mount (only once)
+    useEffect(() => {
+        if (!hasFetchedAreas.current && !areasLoading) {
+            hasFetchedAreas.current = true;
+            fetchAreas();
+        }
+    }, []); // Empty dependency array - only run once on mount
+    
+    // Fetch countries on mount (only once)
+    useEffect(() => {
+        if (!hasFetchedCountries.current && !countriesLoading) {
+            hasFetchedCountries.current = true;
+            fetchCountries();
         }
     }, []); // Empty dependency array - only run once on mount
     

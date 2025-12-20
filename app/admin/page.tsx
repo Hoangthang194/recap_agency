@@ -1,6 +1,15 @@
+import { redirect } from 'next/navigation'
+import { isAuthenticated } from '@/lib/auth'
 import { posts } from '@/data'
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  // Check authentication
+  const authenticated = await isAuthenticated()
+  
+  if (!authenticated) {
+    redirect('/login?redirect=/admin')
+  }
+
   const totalPosts = posts.length
   const latestPosts = posts.slice(0, 5)
 

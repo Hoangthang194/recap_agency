@@ -27,6 +27,7 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Ensure cookies are sent and received
         body: JSON.stringify({ email, password }),
       })
 
@@ -36,16 +37,23 @@ export default function LoginPage() {
         throw new Error(result.error || 'Đăng nhập thất bại')
       }
 
-      // Store token in localStorage
+      // Token is now stored in HTTP-only cookie by the API
+      // Also store in localStorage for client-side checks (optional)
       if (result.data?.token) {
         localStorage.setItem('auth_token', result.data.token)
         localStorage.setItem('user', JSON.stringify(result.data.user))
       }
 
+      // Get redirect URL from query params or default to admin
+      const urlParams = new URLSearchParams(window.location.search)
+      const redirectTo = urlParams.get('redirect') || '/admin'
+      
       toast.success('Đăng nhập thành công!')
       
-      // Redirect to admin dashboard
-      router.push('/admin')
+      // Use window.location.href to ensure full page reload
+      // This ensures the cookie set by the API is included in the next request
+      // The cookie is set by the API response, so we need a full page reload
+      window.location.href = redirectTo
     } catch (err: any) {
       toast.error(err.message || 'Đăng nhập thất bại')
       console.error('Login error:', err)

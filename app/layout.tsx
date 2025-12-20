@@ -5,8 +5,10 @@ import './globals.css'
 import '../public/lexical-playground/src/index.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Toaster } from 'react-hot-toast'
+import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -25,7 +27,40 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const isAdminRoute = pathname.startsWith('/admin')
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  const handleLogout = async () => {
+    if (loggingOut) return
+    
+    setLoggingOut(true)
+    
+    try {
+      // Call logout API to clear cookie
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      // Clear localStorage
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user')
+
+      toast.success('Đăng xuất thành công!')
+      
+      // Redirect to login page
+      window.location.href = '/login'
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Even if API fails, clear local storage and redirect
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    } finally {
+      setLoggingOut(false)
+    }
+  }
 
   return (
     <html lang="en">
@@ -44,13 +79,13 @@ export default function RootLayout({
                 </span>
               </div>
               <nav className="flex-1 px-4 py-6 space-y-1 text-sm">
-                <a
+                {/* <a
                   href="/admin"
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
                 >
                   <span className="material-icons-outlined text-base">space_dashboard</span>
                   <span>Tổng Quan</span>
-                </a>
+                </a> */}
                 <a
                   href="/admin/posts"
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
@@ -87,9 +122,13 @@ export default function RootLayout({
                 </div>
                 <div className="flex items-center gap-3 text-xs md:text-sm">
                   <span className="hidden md:inline text-gray-500">Bảng Điều Khiển</span>
-                  <button className="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-100">
+                  <button 
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <span className="material-icons-outlined text-sm">logout</span>
-                    <span>Đăng Xuất</span>
+                    <span>{loggingOut ? 'Đang đăng xuất...' : 'Đăng Xuất'}</span>
                   </button>
                 </div>
               </header>
