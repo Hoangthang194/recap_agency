@@ -9,22 +9,31 @@ export async function GET(
   try {
     const { slug } = await params;
     
+    // Decode slug in case it's URL encoded
+    const decodedSlug = decodeURIComponent(slug);
+    
     const posts = await query<any[]>(
       `SELECT 
         p.*,
+        a.id as author_id,
         a.name as author_name,
         a.avatar as author_avatar
       FROM posts p
       LEFT JOIN authors a ON p.author_id = a.id
       WHERE p.slug = ? AND p.is_deleted = 0`,
-      [slug]
+      [decodedSlug]
     );
 
     if (posts.length === 0) {
+      // Try to find similar slugs for debugging
+      const allPosts = await query<any[]>(
+        `SELECT slug, title FROM posts WHERE is_deleted = 0 LIMIT 10`
+      );
+      
       return NextResponse.json(
         {
           success: false,
-          error: 'Post not found',
+          error: `Post not found with slug: ${decodedSlug}`,
         },
         { status: 404 }
       );
@@ -38,7 +47,6 @@ export async function GET(
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Error fetching post by slug:', error);
     return NextResponse.json(
       {
         success: false,

@@ -1,17 +1,43 @@
-import { redirect } from 'next/navigation'
-import { isAuthenticated } from '@/lib/auth'
-import { posts } from '@/data'
+'use client'
 
-export default async function AdminDashboardPage() {
-  // Check authentication
-  const authenticated = await isAuthenticated()
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { usePosts } from '@/hooks'
+
+export default function AdminDashboardPage() {
+  const router = useRouter()
+  const { posts, loading, fetchPosts } = usePosts()
   
-  if (!authenticated) {
-    redirect('/login?redirect=/admin')
-  }
+  // Fetch posts on mount
+  useEffect(() => {
+    fetchPosts()
+  }, [fetchPosts])
+  
+  // Check authentication (middleware will handle redirect)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        router.push('/login?redirect=/admin')
+      }
+    }
+  }, [router])
 
-  const totalPosts = posts.length
-  const latestPosts = posts.slice(0, 5)
+  const totalPosts = posts?.length || 0
+  const latestPosts = posts?.slice(0, 5) || []
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+            <div className="text-sm text-gray-500">Đang tải...</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -49,28 +75,34 @@ export default async function AdminDashboardPage() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900">Bài viết mới nhất</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-xs md:text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-gray-500">
-                <th className="py-2 pr-4 font-medium">Tiêu đề</th>
-                <th className="py-2 pr-4 font-medium">Danh mục</th>
-                <th className="py-2 pr-4 font-medium">Ngày</th>
-              </tr>
-            </thead>
-            <tbody>
-              {latestPosts.map((post) => (
-                <tr key={post.id} className="border-b border-gray-100 last:border-0">
-                  <td className="py-2 pr-4 text-gray-900">{post.title}</td>
-                  <td className="py-2 pr-4 text-gray-700">{post.category}</td>
-                  <td className="py-2 pr-4 text-gray-500 whitespace-nowrap">
-                    {post.date}
-                  </td>
+        {latestPosts.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 text-sm">
+            Chưa có bài viết nào
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-xs md:text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-gray-500">
+                  <th className="py-2 pr-4 font-medium">Tiêu đề</th>
+                  <th className="py-2 pr-4 font-medium">Danh mục</th>
+                  <th className="py-2 pr-4 font-medium">Ngày</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {latestPosts.map((post) => (
+                  <tr key={post.id} className="border-b border-gray-100 last:border-0">
+                    <td className="py-2 pr-4 text-gray-900">{post.title}</td>
+                    <td className="py-2 pr-4 text-gray-700">{post.category}</td>
+                    <td className="py-2 pr-4 text-gray-500 whitespace-nowrap">
+                      {post.date}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

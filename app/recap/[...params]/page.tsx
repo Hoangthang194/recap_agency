@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, use, useRef as useReactRef } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Newsletter from '@/components/Newsletter';
 import { usePosts } from '@/hooks';
-import { getPostUrl, findPostBySlugAndDate } from '@/utils/post';
+import { getPostUrl, parseDate } from '@/utils/post';
 
 interface PageProps {
   params: Promise<{
@@ -17,54 +17,87 @@ export default function RecapPostPage({ params }: PageProps) {
   // Use React.use() to unwrap the Promise synchronously
   const { params: urlParams } = use(params);
   const router = useRouter();
-  const { posts, loading: postsLoading, fetchPosts } = usePosts();
+  const { posts, post: singlePost, loading: postsLoading, fetchPosts, getPostBySlug } = usePosts();
   
-  // Fetch posts on mount (only once)
+  // Track if posts have been fetched (for spotlight and navigation)
+  const hasFetchedPosts = useRef(false);
+  
+  // Fetch posts on mount (only once) - for spotlight and navigation
   useEffect(() => {
-    if (posts.length === 0 && !postsLoading) {
+    if (!hasFetchedPosts.current && !postsLoading) {
+      hasFetchedPosts.current = true;
       fetchPosts();
     }
-  }, [posts.length, postsLoading, fetchPosts]);
+  }, [postsLoading, fetchPosts]);
   
   // For preview mode, check if first param is 'preview'
   const isPreview = urlParams && urlParams[0] === 'preview';
   
-  // Parse URL params and find post (will be recalculated when posts load)
-  const [foundPost, setFoundPost] = useState<(typeof posts)[0] | undefined>(undefined);
-  const [hasSearched, setHasSearched] = useState(false); // Track if we've finished searching
+  // Parse URL params and fetch post by slug
+  const [foundPost, setFoundPost] = useState<typeof singlePost>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [searchingPost, setSearchingPost] = useState(false);
   
-  // Find post when posts are loaded
+  // Fetch post by slug when URL params change
   useEffect(() => {
-    if (posts.length === 0) {
-      setFoundPost(undefined);
-      setHasSearched(false);
+    if (!urlParams || urlParams.length < 4) {
+      setFoundPost(null);
+      setHasSearched(true);
       return;
     }
     
-    let post: (typeof posts)[0] | undefined;
+    const [year, month, day, ...slugParts] = urlParams;
+    // URL slug is kebab-case (e.g., "ha-long-bay-travel-guide")
+    // Post slug in database is also kebab-case (e.g., "ha-long-bay-travel-guide")
+    // Keep slug as kebab-case for API call
+    const urlSlug = slugParts.join('-');
     
-    if (urlParams && urlParams.length >= 4) {
-      const [year, month, day, ...slugParts] = urlParams;
-      // URL slug might be kebab-case (with hyphens), convert to snake_case (with underscores)
-      const urlSlug = slugParts.join('-').replace(/-/g, '_');
-      post = findPostBySlugAndDate(posts, year, month, day, urlSlug);
-      
-      console.log('Finding post:', { year, month, day, urlSlug, found: !!post });
-      if (post) {
-        console.log('Found post:', post.title, post.slug);
-      } else {
-        console.log('Post not found. Available posts:', posts.map(p => ({ title: p.title, slug: p.slug, date: p.date })));
-      }
-    }
+    console.log('🔍 Fetching post by slug:', { 
+      year, 
+      month, 
+      day, 
+      urlSlug, 
+      originalUrlSlug: slugParts.join('-'),
+      urlParams: urlParams.join('/')
+    });
     
-    // Fallback to default post (only if posts are loaded and not preview)
-    if (!post && !isPreview && posts.length > 0) {
-      post = posts[0];
-    }
+    setSearchingPost(true);
+    setHasSearched(false);
     
-    setFoundPost(post);
-    setHasSearched(true); // Mark search as complete
-  }, [posts, urlParams, isPreview]);
+    getPostBySlug(urlSlug)
+      .then((post) => {
+        if (post) {
+          // Verify date matches URL (parse date string like "Aug 8, 2025")
+          const postDate = parseDate(post.date);
+          const urlDate = new Date(
+            parseInt(year),
+            parseInt(month) - 1,
+            parseInt(day)
+          );
+          
+          const dateMatch = 
+            postDate.getFullYear() === urlDate.getFullYear() &&
+            postDate.getMonth() === urlDate.getMonth() &&
+            postDate.getDate() === urlDate.getDate();
+          
+          if (dateMatch) {
+            setFoundPost(post);
+          } else {
+
+            setFoundPost(null);
+          }
+        } else {
+          setFoundPost(null);
+        }
+        setHasSearched(true);
+        setSearchingPost(false);
+      })
+      .catch((error) => {
+        setFoundPost(null);
+        setHasSearched(true);
+        setSearchingPost(false);
+      });
+  }, [urlParams, getPostBySlug]);
   
   const [post, setPost] = useState<(typeof posts)[0] | null>(null);
   const [loadedPosts, setLoadedPosts] = useState<typeof posts[0][]>([]);
@@ -79,6 +112,7 @@ export default function RecapPostPage({ params }: PageProps) {
   const endOfPostRefs = useRef<(HTMLDivElement | null)[]>([]);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const loadingPostsRef = useRef<Set<string>>(new Set()); // Track posts being loaded to prevent duplicates
 
   // Calculate reading time based on content length
   const calculateReadingTime = (element: HTMLElement | null): number => {
@@ -91,20 +125,20 @@ export default function RecapPostPage({ params }: PageProps) {
 
   // Update post when foundPost changes (support preview mode)
   useEffect(() => {
-    if (posts.length === 0) return; // Wait for posts to load
-    
-    let finalPost = foundPost || null;
+    let finalPost = foundPost;
 
     // Nếu là chế độ preview từ admin, lấy dữ liệu tạm trong sessionStorage
-    if (isPreview && typeof window !== 'undefined' && posts.length > 0) {
+    if (isPreview && typeof window !== 'undefined') {
       const stored = window.sessionStorage.getItem('postPreview')
       if (stored && stored.trim().startsWith('{')) {
         try {
-          const draft = JSON.parse(stored) as Partial<(typeof posts)[0]> & { contentHtml?: string }
-          finalPost = {
-            ...posts[0],
-            ...draft,
-          } as (typeof posts)[0]
+          const draft = JSON.parse(stored) as Partial<typeof foundPost> & { contentHtml?: string }
+          if (foundPost) {
+            finalPost = {
+              ...foundPost,
+              ...draft,
+            } as typeof foundPost
+          }
           setPreviewHtml(draft.contentHtml ?? null)
         } catch {
           window.sessionStorage.removeItem('postPreview')
@@ -121,6 +155,7 @@ export default function RecapPostPage({ params }: PageProps) {
     if (finalPost) {
       setPost(finalPost);
       setLoadedPosts([]);
+      loadingPostsRef.current.clear(); // Clear loading tracking when post changes
       
       setTimeout(() => {
         if (contentRef.current) {
@@ -131,7 +166,7 @@ export default function RecapPostPage({ params }: PageProps) {
     } else {
       setPost(null);
     }
-  }, [foundPost, posts, isPreview]);
+  }, [foundPost, isPreview]);
 
 
   // Scroll handler and other logic similar to app/post/[id]/page.tsx
@@ -260,35 +295,57 @@ export default function RecapPostPage({ params }: PageProps) {
                 // Only load if not already loaded and post exists
                 if (nextPostIndex < posts.length && loadedCount === index) {
                   const nextPost = posts[nextPostIndex];
-                  setLoadedPosts(prev => [...prev, nextPost]);
-                  // Initialize section refs for new post
-                  loadedPostsSectionRefs.current[nextPost.slug] = {};
                   
-                  // Calculate reading time for loaded post after render
-                  setTimeout(() => {
-                    const postContentElement = document.querySelector(`[data-post-slug="${nextPost.slug}"]`);
-                    if (postContentElement) {
-                      const time = calculateReadingTime(postContentElement as HTMLElement);
-                      setLoadedPostsReadingTime(prev => ({
-                        ...prev,
-                        [nextPost.slug]: time
-                      }));
-                      
-                      // Set up section refs for loaded post headings
-                      if (nextPost.content) {
-                        const loadedPostTocItems = parseHeadingsFromContent(nextPost.content);
-                        loadedPostTocItems.forEach((item) => {
-                          const element = document.getElementById(item.id) || document.querySelector(`[data-heading-id="${item.id}"]`);
-                          if (element && !loadedPostsSectionRefs.current[nextPost.slug]) {
-                            loadedPostsSectionRefs.current[nextPost.slug] = {};
-                          }
-                          if (element) {
-                            loadedPostsSectionRefs.current[nextPost.slug][item.id] = element as HTMLElement;
-                          }
-                        });
+                  // Check if this post is already loaded, is the current post, or is being loaded
+                  const isAlreadyLoaded = loadedPosts.some(p => p.slug === nextPost.slug);
+                  const isCurrentPost = nextPost.slug === post.slug;
+                  const isBeingLoaded = loadingPostsRef.current.has(nextPost.slug);
+                  
+                  if (!isAlreadyLoaded && !isCurrentPost && !isBeingLoaded) {
+                    // Mark as being loaded to prevent race conditions
+                    loadingPostsRef.current.add(nextPost.slug);
+                    
+                    setLoadedPosts(prev => {
+                      // Double check to prevent duplicates
+                      if (prev.some(p => p.slug === nextPost.slug)) {
+                        loadingPostsRef.current.delete(nextPost.slug);
+                        return prev;
                       }
-                    }
-                  }, 200);
+                      return [...prev, nextPost];
+                    });
+                    // Initialize section refs for new post
+                    loadedPostsSectionRefs.current[nextPost.slug] = {};
+                    
+                    // Calculate reading time for loaded post after render
+                    setTimeout(() => {
+                      const postContentElement = document.querySelector(`[data-post-slug="${nextPost.slug}"]`);
+                      if (postContentElement) {
+                        const time = calculateReadingTime(postContentElement as HTMLElement);
+                        setLoadedPostsReadingTime(prev => ({
+                          ...prev,
+                          [nextPost.slug]: time
+                        }));
+                        
+                        // Set up section refs for loaded post headings
+                        if (nextPost.content) {
+                          const loadedPostTocItems = parseHeadingsFromContent(nextPost.content);
+                          loadedPostTocItems.forEach((item) => {
+                            const element = document.getElementById(item.id) || document.querySelector(`[data-heading-id="${item.id}"]`);
+                            if (element && !loadedPostsSectionRefs.current[nextPost.slug]) {
+                              loadedPostsSectionRefs.current[nextPost.slug] = {};
+                            }
+                            if (element) {
+                              loadedPostsSectionRefs.current[nextPost.slug][item.id] = element as HTMLElement;
+                            }
+                          });
+                        }
+                      }
+                      // Remove from loading set after a delay to allow for render
+                      setTimeout(() => {
+                        loadingPostsRef.current.delete(nextPost.slug);
+                      }, 1000);
+                    }, 200);
+                  }
                 }
               }
             }
@@ -427,8 +484,8 @@ export default function RecapPostPage({ params }: PageProps) {
 
   const currentIndex = post ? posts.findIndex(p => p.slug === post.slug) : -1;
 
-  // Loading state - show loading while posts are being fetched or search is in progress
-  if (postsLoading || !hasSearched) {
+  // Loading state - show loading while searching for post
+  if (searchingPost || !hasSearched) {
     return (
       <div className="bg-white min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -440,7 +497,7 @@ export default function RecapPostPage({ params }: PageProps) {
   }
 
   // 404 - only show after search is complete and no post found
-  if (!foundPost && !isPreview && hasSearched && posts.length > 0) {
+  if (!foundPost && !isPreview && hasSearched) {
     return (
       <div className="bg-white min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -636,7 +693,7 @@ export default function RecapPostPage({ params }: PageProps) {
                 {currentIndex > 0 && (
                   <Link href={getPostUrl(posts[currentIndex - 1])} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <img src={posts[currentIndex - 1].image} alt={posts[currentIndex - 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
+                      <img src={posts[currentIndex - 1].thumbnail || posts[currentIndex - 1].image} alt={posts[currentIndex - 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
                     <div className="absolute inset-0 flex items-end p-4">
@@ -653,7 +710,7 @@ export default function RecapPostPage({ params }: PageProps) {
                 {currentIndex < posts.length - 1 && (
                   <Link href={getPostUrl(posts[currentIndex + 1])} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <img src={posts[currentIndex + 1].image} alt={posts[currentIndex + 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
+                      <img src={posts[currentIndex + 1].thumbnail || posts[currentIndex + 1].image} alt={posts[currentIndex + 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
                     <div className="absolute inset-0 flex items-end p-4">
@@ -683,7 +740,7 @@ export default function RecapPostPage({ params }: PageProps) {
                 {posts.slice(0, 4).map((spotlightPost) => (
                   <Link href={getPostUrl(spotlightPost)} key={spotlightPost.slug} className="flex gap-4 group">
                     <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0">
-                      <img src={spotlightPost.image} alt={spotlightPost.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                      <img src={spotlightPost.thumbnail || spotlightPost.image} alt={spotlightPost.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                     </div>
                     <div className="flex flex-col justify-center flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -746,7 +803,7 @@ export default function RecapPostPage({ params }: PageProps) {
                 <Link href={getPostUrl(relatedPost)} key={relatedPost.slug} className="group">
                   <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
                     <div className="rounded-2xl overflow-hidden aspect-[3/2] mb-4">
-                      <img src={relatedPost.image} alt={relatedPost.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={relatedPost.thumbnail || relatedPost.image} alt={relatedPost.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     </div>
                     <div className="p-4">
                       <div className="flex items-center gap-2 mb-2">
@@ -929,7 +986,7 @@ export default function RecapPostPage({ params }: PageProps) {
                             {hasPrev && (
                               <Link href={getPostUrl(posts[loadedPostIndex - 1])} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <img src={posts[loadedPostIndex - 1].image} alt={posts[loadedPostIndex - 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
+                                  <img src={posts[loadedPostIndex - 1].thumbnail || posts[loadedPostIndex - 1].image} alt={posts[loadedPostIndex - 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
                                 </div>
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
                                 <div className="absolute inset-0 flex items-end p-4">
@@ -946,7 +1003,7 @@ export default function RecapPostPage({ params }: PageProps) {
                             {hasNext && (
                               <Link href={getPostUrl(posts[loadedPostIndex + 1])} className="relative rounded-xl overflow-hidden aspect-[3/2] group hover:opacity-90 transition-opacity">
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <img src={posts[loadedPostIndex + 1].image} alt={posts[loadedPostIndex + 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
+                                  <img src={posts[loadedPostIndex + 1].thumbnail || posts[loadedPostIndex + 1].image} alt={posts[loadedPostIndex + 1].title} className="w-full h-full object-cover" style={{ minHeight: '100%', minWidth: '100%', objectPosition: 'center center' }} />
                                 </div>
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
                                 <div className="absolute inset-0 flex items-end p-4">
@@ -978,7 +1035,7 @@ export default function RecapPostPage({ params }: PageProps) {
                       {posts.slice(0, 4).map((spotlightPost) => (
                         <Link href={getPostUrl(spotlightPost)} key={spotlightPost.slug} className="flex gap-4 group">
                           <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0">
-                            <img src={spotlightPost.image} alt={spotlightPost.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                            <img src={spotlightPost.thumbnail || spotlightPost.image} alt={spotlightPost.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                           </div>
                           <div className="flex flex-col justify-center flex-1">
                             <div className="flex items-center gap-2 mb-1">
@@ -1037,4 +1094,5 @@ export default function RecapPostPage({ params }: PageProps) {
     </div>
   )
 }
+
 

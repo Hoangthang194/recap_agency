@@ -62,13 +62,14 @@ export function getPostUrl(post: Post): string {
 
 /**
  * Find post by slug and date
+ * URL slug is kebab-case, post.slug is snake_case, so we need to convert for comparison
  */
 export function findPostBySlugAndDate(
   posts: Post[],
   year: string,
   month: string,
   day: string,
-  slug: string
+  urlSlug: string // This is already converted from kebab-case to snake_case
 ): Post | undefined {
   const targetDate = new Date(
     parseInt(year),
@@ -76,17 +77,47 @@ export function findPostBySlugAndDate(
     parseInt(day)
   );
 
-  return posts.find((post) => {
+  console.log('🔎 findPostBySlugAndDate:', {
+    year,
+    month,
+    day,
+    urlSlug,
+    targetDate: targetDate.toISOString(),
+    postsCount: posts.length
+  });
+
+  const found = posts.find((post) => {
     const postDate = parseDate(post.date);
-    // Use post.slug directly (required field now)
-    const postSlug = post.slug;
+    const postSlug = post.slug || '';
     
-    return (
+    // Compare dates
+    const dateMatch = 
       postDate.getFullYear() === targetDate.getFullYear() &&
       postDate.getMonth() === targetDate.getMonth() &&
-      postDate.getDate() === targetDate.getDate() &&
-      postSlug === slug
-    );
+      postDate.getDate() === targetDate.getDate();
+    
+    // Compare slugs (both should be snake_case now)
+    const slugMatch = postSlug === urlSlug;
+    
+    if (dateMatch && !slugMatch) {
+      console.log('⚠️ Date matches but slug differs:', {
+        postTitle: post.title,
+        postSlug,
+        urlSlug,
+        postDate: postDate.toISOString(),
+        targetDate: targetDate.toISOString()
+      });
+    }
+    
+    return dateMatch && slugMatch;
   });
+
+  if (found) {
+    console.log('✅ Post found:', found.title, '| Slug:', found.slug);
+  } else {
+    console.log('❌ No post found matching:', { year, month, day, urlSlug });
+  }
+
+  return found;
 }
 

@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from 'react'
 import Newsletter from '@/components/Newsletter'
 import PostCard from '@/components/PostCard'
-import { currentUser } from '@/data'
 import { usePosts, useCategories } from '@/hooks'
 import Link from 'next/link'
 import { getPostUrl } from '@/utils/post'
@@ -49,7 +48,7 @@ export default function Home() {
     id: heroPostData.id,
     title: heroPostData.title,
     excerpt: heroPostData.excerpt,
-    image: heroPostData.image,
+    image: heroPostData.thumbnail || heroPostData.image,
     author: heroPostData.author,
     date: heroPostData.date
   } : null;
@@ -86,7 +85,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-24">
           <Link href={getPostUrl(heroPostData!)} className="lg:col-span-7 group relative h-[500px] lg:h-auto rounded-3xl overflow-hidden cursor-pointer block">
             <img 
-              src={heroPost.image} 
+              src={heroPostData!.thumbnail || heroPostData!.image} 
               alt="Hero" 
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
@@ -116,7 +115,7 @@ export default function Home() {
             {heroSidePosts.slice(0, 2).map((post) => (
               <Link href={getPostUrl(post)} key={post.id} className="flex gap-4 group cursor-pointer bg-white p-4 rounded-2xl hover:shadow-lg transition-all duration-300 items-center">
                 <div className="w-24 h-24 shrink-0 rounded-xl overflow-hidden">
-                  <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <img src={post.thumbnail || post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2 mb-1">
@@ -132,7 +131,7 @@ export default function Home() {
             {/* More prominent side cards */}
             {heroSidePosts.slice(2, 4).map((post) => (
               <Link href={getPostUrl(post)} key={post.id} className="group relative h-48 rounded-2xl overflow-hidden block">
-                <img src={post.image} alt={post.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src={post.thumbnail || post.image} alt={post.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors"></div>
                 <div className="absolute bottom-0 left-0 p-5">
                   <span className="text-[10px] font-bold text-white uppercase bg-primary px-2 py-0.5 rounded mb-2 inline-block">{post.category}</span>

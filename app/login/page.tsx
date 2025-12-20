@@ -1,15 +1,27 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    // Check if already logged in, redirect to admin
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token')
+      if (token) {
+        const redirectUrl = searchParams?.get('redirect') || '/admin'
+        router.push(redirectUrl)
+      }
+    }
+  }, [router, searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,23 +49,31 @@ export default function LoginPage() {
         throw new Error(result.error || 'Đăng nhập thất bại')
       }
 
-      // Token is now stored in HTTP-only cookie by the API
-      // Also store in localStorage for client-side checks (optional)
+      // Store token in localStorage
       if (result.data?.token) {
         localStorage.setItem('auth_token', result.data.token)
         localStorage.setItem('user', JSON.stringify(result.data.user))
       }
 
-      // Get redirect URL from query params or default to admin
-      const urlParams = new URLSearchParams(window.location.search)
-      const redirectTo = urlParams.get('redirect') || '/admin'
+      // Check if cookie was set (it should be set by server)
+      const cookies = document.cookie
+      console.log('🍪 Cookies:', cookies)
+      console.log('🍪 Has auth_token cookie:', cookies.includes('auth_token'))
+
+      // Redirect to redirect URL or admin dashboard
+      const redirectUrl = searchParams?.get('redirect') || '/admin'
+      console.log('🔄 Redirecting to:', redirectUrl)
       
-      toast.success('Đăng nhập thành công!')
-      
-      // Use window.location.href to ensure full page reload
-      // This ensures the cookie set by the API is included in the next request
-      // The cookie is set by the API response, so we need a full page reload
-      window.location.href = redirectTo
+      toast.success('Đăng nhập thành công!', {
+        duration: 1000,
+      })
+      // Wait a moment for toast to show, then redirect
+      // Cookie is already set by server in response headers
+      setTimeout(() => {
+        console.log('🔄 Executing redirect to:', redirectUrl)
+        // Use window.location.replace to avoid adding to history
+        window.location.replace(redirectUrl)
+      }, 500)
     } catch (err: any) {
       toast.error(err.message || 'Đăng nhập thất bại')
       console.error('Login error:', err)

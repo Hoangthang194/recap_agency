@@ -12,6 +12,8 @@ export default function AdminPostsPage() {
   const [category, setCategory] = useState<string>('all')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
+  const [categorySearchQuery, setCategorySearchQuery] = useState('')
   
   // Use refs to track if we've already fetched to prevent multiple calls
   const hasFetchedPosts = useRef(false)
@@ -31,6 +33,25 @@ export default function AdminPostsPage() {
       fetchCategories()
     }
   }, []) // Empty dependency array - only run once on mount
+
+  // Filter categories based on search query
+  const filteredCategories = useMemo(() => {
+    if (!categorySearchQuery.trim()) {
+      return categories
+    }
+    const query = categorySearchQuery.toLowerCase()
+    return categories.filter(cat => 
+      cat.name.toLowerCase().includes(query) ||
+      cat.description?.toLowerCase().includes(query)
+    )
+  }, [categories, categorySearchQuery])
+
+  // Get current category name
+  const currentCategoryName = useMemo(() => {
+    if (category === 'all') return 'Tất cả'
+    const found = categories.find(cat => cat.id === category)
+    return found?.name || category
+  }, [category, categories])
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
@@ -99,33 +120,125 @@ export default function AdminPostsPage() {
             className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        
+        {/* Category Dropdown */}
+        <div className="relative w-full md:w-auto">
           <button
-            onClick={() => setCategory('all')}
-            className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
-              category === 'all'
-                ? 'bg-primary text-white border-primary'
-                : 'border-gray-300 text-gray-700 hover:border-primary hover:text-primary'
-            }`}
+            type="button"
+            onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+            className="w-full md:w-auto inline-flex items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-w-[200px]"
           >
-            Tất cả
+            <div className="flex items-center gap-2">
+              <span className="material-icons-outlined text-base text-gray-400">
+                category
+              </span>
+              <span>{currentCategoryName}</span>
+            </div>
+            <span className={`material-icons-outlined text-base transition-transform ${isCategoryDropdownOpen ? 'rotate-180' : ''}`}>
+              expand_more
+            </span>
           </button>
-          {categoriesLoading ? (
-            <div className="text-xs text-gray-500 px-3 py-1">Đang tải danh mục...</div>
-          ) : (
-            categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
-                  category === cat.id
-                    ? 'bg-primary text-white border-primary'
-                    : 'border-gray-300 text-gray-700 hover:border-primary hover:text-primary'
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))
+          
+          {/* Dropdown Menu */}
+          {isCategoryDropdownOpen && (
+            <>
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-0 z-10" 
+                onClick={() => setIsCategoryDropdownOpen(false)}
+              />
+              
+              {/* Dropdown Content */}
+              <div className="absolute right-0 mt-2 w-full md:w-80 z-20 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 flex flex-col">
+                {/* Search Input */}
+                <div className="p-3 border-b border-gray-200">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 material-icons-outlined text-gray-400 text-base">
+                      search
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm danh mục..."
+                      value={categorySearchQuery}
+                      onChange={(e) => setCategorySearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
+                
+                {/* Categories List */}
+                <div className="flex-1 overflow-y-auto max-h-64">
+                  {categoriesLoading ? (
+                    <div className="p-4 text-center text-sm text-gray-500">
+                      Đang tải...
+                    </div>
+                  ) : filteredCategories.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-gray-500">
+                      Không tìm thấy danh mục nào
+                    </div>
+                  ) : (
+                    <div className="py-1">
+                      {/* "All" option */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCategory('all')
+                          setIsCategoryDropdownOpen(false)
+                          setCategorySearchQuery('')
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors ${
+                          category === 'all' ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-700'
+                        }`}
+                      >
+                        <span className="material-icons-outlined text-base text-gray-400">
+                          list
+                        </span>
+                        <div className="flex-1 font-medium">Tất cả</div>
+                        {category === 'all' && (
+                          <span className="material-icons-outlined text-primary text-base">
+                            check
+                          </span>
+                        )}
+                      </button>
+                      
+                      {/* Category options */}
+                      {filteredCategories.map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setCategory(cat.id)
+                            setIsCategoryDropdownOpen(false)
+                            setCategorySearchQuery('')
+                          }}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors ${
+                            category === cat.id ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-700'
+                          }`}
+                        >
+                          <span className="material-icons-outlined text-base text-gray-400">
+                            {cat.icon || 'folder'}
+                          </span>
+                          <div className="flex-1">
+                            <div className="font-medium">{cat.name}</div>
+                            {cat.description && (
+                              <div className="text-xs text-gray-500 line-clamp-1">
+                                {cat.description}
+                              </div>
+                            )}
+                          </div>
+                          {category === cat.id && (
+                            <span className="material-icons-outlined text-primary text-base">
+                              check
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>

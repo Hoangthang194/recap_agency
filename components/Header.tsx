@@ -210,12 +210,8 @@ const Header: React.FC = () => {
                                                                         {region}
                                                                     </div>
                                                                     {regionAreas.map((area, areaIndex) => {
-                                                                        const areaCountries = countries.filter(c => {
-                                                                            // Find cities in this area from categories
-                                                                            const areaCities = categories.filter(cat => cat.isCity && cat.areaId === area.id);
-                                                                            const countryIds = new Set(areaCities.map(city => city.countryId).filter((id): id is string => !!id));
-                                                                            return countryIds.has(c.id);
-                                                                        });
+                                                                        // Filter countries by areaId
+                                                                        const areaCountries = countries.filter(c => c.areaId === area.id);
                                                                         
                                                                         return (
                                                                             <div key={area.id} className="mb-4">
@@ -283,7 +279,7 @@ const Header: React.FC = () => {
                                                                 <p className="text-xs text-gray-400">{post.date}</p>
                                                             </div>
                                                             <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden relative">
-                                                                <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover/post:scale-110 transition-transform duration-500" />
+                                                                <img src={post.thumbnail || post.image} alt={post.title} className="w-full h-full object-cover group-hover/post:scale-110 transition-transform duration-500" />
                                                             </div>
                                                         </Link>
                                                     ))}
@@ -454,12 +450,8 @@ const Header: React.FC = () => {
                                                                         {region}
                                                                     </div>
                                                                     {regionAreas.map(area => {
-                                                                        const areaCountries = countries.filter(c => {
-                                                                            // Find cities in this area from categories
-                                                                            const areaCities = categories.filter(cat => cat.isCity && cat.areaId === area.id);
-                                                                            const countryIds = new Set(areaCities.map(city => city.countryId).filter((id): id is string => !!id));
-                                                                            return countryIds.has(c.id);
-                                                                        });
+                                                                        // Filter countries by areaId
+                                                                        const areaCountries = countries.filter(c => c.areaId === area.id);
                                                                         
                                                                         return (
                                                                             <div key={area.id} className="mb-3">

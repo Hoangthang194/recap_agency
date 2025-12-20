@@ -50,8 +50,7 @@ export default function ContactPage() {
                   </div>
                   <h3 className="text-lg font-bold text-gray-900">Email</h3>
                 </div>
-                <p className="text-gray-600 ml-15">hello@recap.com</p>
-                <p className="text-gray-600 ml-15">support@recap.com</p>
+                <p className="text-gray-600 ml-15">marketing@kafinity.agency</p>
               </div>
 
               <div>
@@ -61,7 +60,7 @@ export default function ContactPage() {
                   </div>
                   <h3 className="text-lg font-bold text-gray-900">Phone</h3>
                 </div>
-                <p className="text-gray-600 ml-15">+1 (555) 123-4567</p>
+                <p className="text-gray-600 ml-15">+852 3123 4588</p>
               </div>
 
               <div>
@@ -72,9 +71,9 @@ export default function ContactPage() {
                   <h3 className="text-lg font-bold text-gray-900">Address</h3>
                 </div>
                 <p className="text-gray-600 ml-15">
-                  123 Blog Street<br />
-                  Content City, CC 12345<br />
-                  United States
+                  21/F, Harbour View Center<br />
+                  168 Gloucester Road<br />
+                  Wan Chai, Hong Kong
                 </p>
               </div>
 

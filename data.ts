@@ -2,6 +2,7 @@ import { Post, Category, Author, Country, City, Area } from './types';
 import { generateSlug } from './utils/post';
 
 export const currentUser: Author = {
+  id: '1',
   name: "Rowan Blake",
   avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCEWE4PWVi-noHBer7hGHoPTj9HHSHWkhCSm8jAIU7JRRLpAuDdFmPTmiklMA2fgMjbTiLdRnBV55W9xH6cwyLcOfNx3faVnhuIucoX9u4_OlGQLFuoUyono7PXfkKveBfJ1Awu5TNhlbhpVhe4egCmuSKSc4wk_tUi07posmV5U_WDxh8znK9HUNsrNdE4RiRxQa5-RNh1FIHRJu90o6a8AhqWMRtvk06Y6DJO7EE4u-wxfobXM_QLSDeYdMRIiuGskhhhh9TAhX0y"
 };

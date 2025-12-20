@@ -1,34 +1,81 @@
+'use client'
+
+import { useEffect, useMemo } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 import Newsletter from '@/components/Newsletter'
-import { posts, categories } from '@/data'
+import { usePosts } from '@/hooks/usePosts'
+import { useCategories } from '@/hooks/useCategories'
 import { getPostUrl } from '@/utils/post'
 
-interface CategoryPageProps {
-  params: Promise<{
-    categoryId: string
-  }>
-}
-
-export default async function CategoryPage({ params }: CategoryPageProps) {
-  // Await params before using
-  const { categoryId } = await params
+export default function CategoryPage() {
+  const params = useParams()
+  const router = useRouter()
+  const categoryId = params?.categoryId as string
   
-  // Find category or city by id
-  const category = categories.find(cat => cat.id === categoryId)
+  const { posts, loading: postsLoading, fetchPosts } = usePosts()
+  const { categories, loading: categoriesLoading, fetchCategories, getCategoryById } = useCategories()
   
-  // If category/city not found, show 404
-  if (!category) {
-    notFound()
+  // Fetch all categories and posts on mount
+  useEffect(() => {
+    fetchCategories()
+  }, [fetchCategories])
+  
+  // Fetch category by ID and posts when categoryId changes
+  useEffect(() => {
+    if (categoryId) {
+      getCategoryById(categoryId)
+      fetchPosts({ categoryId })
+    }
+  }, [categoryId, getCategoryById, fetchPosts])
+  
+  // Find category by id
+  const category = useMemo(() => {
+    return categories.find(cat => cat.id === categoryId) || null
+  }, [categories, categoryId])
+  
+  // Filter posts by categoryId
+  const categoryPosts = useMemo(() => {
+    if (!categoryId) return []
+    return posts.filter(post => post.category === categoryId)
+  }, [posts, categoryId])
+  
+  const loading = postsLoading || categoriesLoading
+  
+  // Show loading state
+  if (loading && !category) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center py-20">
+            <div className="text-sm text-gray-500">Đang tải...</div>
+          </div>
+        </div>
+      </div>
+    )
   }
   
-  const isCity = category.isCity === true
-  const categoryName = category.name
-  const categoryDescription = category.description || ''
-  const categoryImage = category.image
+  // If category not found, show 404
+  if (!loading && !category) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center py-20">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Category not found</h1>
+            <p className="text-gray-500 mb-6">The category you're looking for doesn't exist.</p>
+            <Link href="/" className="text-primary hover:underline">
+              Go back to home
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
   
-  // Filter posts: always filter by categoryId (works for both categories and cities)
-  const categoryPosts = posts.filter(post => post.category === categoryId)
+  const isCity = category?.isCity === true
+  const categoryName = category?.name || ''
+  const categoryDescription = category?.description || ''
+  const categoryImage = category?.image || ''
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -59,7 +106,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pb-24">
-        {categoryPosts.length > 0 ? (
+        {postsLoading ? (
+          <div className="text-center py-20">
+            <div className="text-sm text-gray-500">Đang tải bài viết...</div>
+          </div>
+        ) : categoryPosts.length > 0 ? (
           <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
             {categoryPosts.map((post, idx) => (
               <div key={post.id} className="break-inside-avoid bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 group">
@@ -68,7 +119,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="material-icons-outlined text-sm text-blue-500">folder_open</span>
-                      <span className="text-xs font-bold text-blue-500 uppercase tracking-wide">{post.category}</span>
+                      <span className="text-xs font-bold text-blue-500 uppercase tracking-wide">
+                        {category?.name || post.category}
+                      </span>
                     </div>
                     <h3 className="text-2xl font-bold text-gray-900 leading-tight mb-4 group-hover:text-primary transition-colors">
                       {post.title}
@@ -90,7 +143,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </div>
         ) : (
           <div className="text-center py-20">
-            <p className="text-gray-500 text-lg">No posts found in this category.</p>
+            <p className="text-gray-500 text-lg">Chưa có bài viết nào trong danh mục này.</p>
           </div>
         )}
       </div>

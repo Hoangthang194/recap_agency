@@ -263,15 +263,38 @@ export function usePosts(initialOptions?: UsePostsOptions): UsePostsReturn {
     setError(null)
     
     try {
-      const response = await fetch(`/api/posts/slug/${slug}`)
+      // Encode slug for URL (handle special characters)
+      const encodedSlug = encodeURIComponent(slug)
+      const url = `/api/posts/slug/${encodedSlug}`
+      
+      console.log('🔍 getPostBySlug:', {
+        originalSlug: slug,
+        encodedSlug,
+        url
+      })
+      
+      const response = await fetch(url, {
+        cache: 'no-store', // Prevent caching issues
+      })
+      
       const result: ApiResponse<Post> = await response.json()
       
       if (!response.ok || !result.success) {
+        console.error('❌ API Error:', {
+          status: response.status,
+          error: result.error,
+          slug
+        })
         throw new Error(result.error || 'Failed to fetch post')
       }
       
       if (result.data) {
         const transformed = transformPost(result.data)
+        console.log('✅ Post transformed:', {
+          title: transformed.title,
+          slug: transformed.slug,
+          id: transformed.id
+        })
         setPost(transformed)
         return transformed
       }
@@ -280,7 +303,11 @@ export function usePosts(initialOptions?: UsePostsOptions): UsePostsReturn {
     } catch (err: any) {
       const errorMessage = err.message || 'An error occurred while fetching post'
       setError(errorMessage)
-      console.error('Error fetching post by slug:', err)
+      console.error('❌ Error fetching post by slug:', {
+        error: err,
+        slug,
+        message: errorMessage
+      })
       return null
     } finally {
       setLoading(false)
