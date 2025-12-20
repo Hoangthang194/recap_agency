@@ -54,6 +54,7 @@ export interface UseUsersReturn {
   fetchUsers: (options?: { role?: string; status?: string }) => Promise<void>
   createUser: (input: CreateUserInput) => Promise<User | null>
   updateUser: (id: string, input: UpdateUserInput) => Promise<User | null>
+  updatePassword: (id: string, currentPassword: string, newPassword: string) => Promise<boolean>
   deleteUser: (id: string) => Promise<boolean>
   getUserById: (id: string) => Promise<User | null>
   
@@ -197,6 +198,38 @@ export function useUsers(initialOptions?: UseUsersOptions): UseUsersReturn {
     }
   }, [transformUser, user])
 
+  // Update password
+  const updatePassword = useCallback(async (id: string, currentPassword: string, newPassword: string): Promise<boolean> => {
+    setCreating(true)
+    setError(null)
+    
+    try {
+      const response = await fetch(`/api/users/${id}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      
+      const result: ApiResponse<void> = await response.json()
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update password')
+      }
+      
+      return true
+    } catch (err: any) {
+      const errorMessage = err.message || 'An error occurred while updating password'
+      setError(errorMessage)
+      console.error('Error updating password:', err)
+      return false
+    } finally {
+      setCreating(false)
+    }
+  }, [])
+
   // Delete user
   const deleteUser = useCallback(async (id: string): Promise<boolean> => {
     setCreating(true)
@@ -273,6 +306,7 @@ export function useUsers(initialOptions?: UseUsersOptions): UseUsersReturn {
     fetchUsers,
     createUser,
     updateUser,
+    updatePassword,
     deleteUser,
     getUserById,
     clearError,

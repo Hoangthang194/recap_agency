@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import bcrypt from 'bcryptjs';
 
 // GET /api/users - Lấy danh sách users
 export async function GET(request: NextRequest) {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get('role'); // Filter by role
     const status = searchParams.get('status'); // Filter by status
 
-    let sql = 'SELECT * FROM users';
+    let sql = 'SELECT id, name, email, role, status, created_at, updated_at FROM users';
     const params: any[] = [];
     const conditions: string[] = [];
 
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, role, status } = body;
+    const { name, email, password, role, status } = body;
 
     // Validation
     if (!name || !email || !role) {
@@ -67,6 +68,17 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Missing required fields: name, email, and role are required',
+        },
+        { status: 400 }
+      );
+    }
+
+    // If password is provided, validate it
+    if (password && password.length < 6) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Password must be at least 6 characters long',
         },
         { status: 400 }
       );
@@ -113,15 +125,24 @@ export async function POST(request: NextRequest) {
     // Generate ID from name (lowercase, replace spaces with hyphens)
     const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
+    // Hash password if provided, otherwise use default password
+    let hashedPassword: string;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
+    } else {
+      // Default password for invited users
+      hashedPassword = await bcrypt.hash('password123', 10);
+    }
+
     // Insert user
     await query<any>(
-      'INSERT INTO users (id, name, email, role, status) VALUES (?, ?, ?, ?, ?)',
-      [id, name, email, role, status || 'invited']
+      'INSERT INTO users (id, name, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, name, email, hashedPassword, role, status || 'invited']
     );
 
-    // Fetch the created user
+    // Fetch the created user (exclude password)
     const [newUser] = await query<any[]>(
-      'SELECT * FROM users WHERE id = ?',
+      'SELECT id, name, email, role, status, created_at, updated_at FROM users WHERE id = ?',
       [id]
     );
 

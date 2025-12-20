@@ -10,7 +10,7 @@ export async function GET(
     const { id } = await params;
 
     const [user] = await query<any[]>(
-      'SELECT * FROM users WHERE id = ? AND is_deleted = 0',
+      'SELECT id, name, email, role, status, created_at, updated_at FROM users WHERE id = ? AND is_deleted = 0',
       [id]
     );
 
@@ -55,7 +55,7 @@ export async function PUT(
 
     // Check if user exists
     const [existingUser] = await query<any[]>(
-      'SELECT * FROM users WHERE id = ? AND is_deleted = 0',
+      'SELECT id, email FROM users WHERE id = ? AND is_deleted = 0',
       [id]
     );
 
@@ -94,7 +94,7 @@ export async function PUT(
     // Check if email already exists (if email is being changed)
     if (email && email !== existingUser.email) {
       const [emailExists] = await query<any[]>(
-        'SELECT * FROM users WHERE email = ? AND id != ? AND is_deleted = 0',
+        'SELECT id FROM users WHERE email = ? AND id != ? AND is_deleted = 0',
         [email, id]
       );
 
@@ -149,7 +149,7 @@ export async function PUT(
 
     // Fetch updated user
     const [updatedUser] = await query<any[]>(
-      'SELECT * FROM users WHERE id = ?',
+      'SELECT id, name, email, role, status, created_at, updated_at FROM users WHERE id = ?',
       [id]
     );
 
@@ -183,7 +183,7 @@ export async function DELETE(
 
     // Check if user exists
     const [existingUser] = await query<any[]>(
-      'SELECT * FROM users WHERE id = ? AND is_deleted = 0',
+      'SELECT id FROM users WHERE id = ? AND is_deleted = 0',
       [id]
     );
 

@@ -5,10 +5,28 @@ import toast from 'react-hot-toast'
 import { useUsers } from '@/hooks'
 
 export default function AdminUsersPage() {
-  const { users, loading, error, fetchUsers, deleteUser, updateUser } = useUsers()
+  const { users, loading, error, fetchUsers, deleteUser, updateUser, updatePassword } = useUsers()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [showPasswordModal, setShowPasswordModal] = useState<string | null>(null)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
+  
+  // Get current user from localStorage
+  const [currentUser, setCurrentUser] = useState<any>(null)
   
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        try {
+          setCurrentUser(JSON.parse(userStr))
+        } catch (e) {
+          console.error('Error parsing user from localStorage:', e)
+        }
+      }
+    }
     fetchUsers()
   }, [fetchUsers])
   
@@ -32,6 +50,37 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleChangePassword = async (userId: string) => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Vui lòng điền đầy đủ các trường')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Mật khẩu mới phải có ít nhất 6 ký tự')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Mật khẩu mới và xác nhận không khớp')
+      return
+    }
+
+    setChangingPassword(true)
+    const success = await updatePassword(userId, currentPassword, newPassword)
+    setChangingPassword(false)
+
+    if (success) {
+      toast.success('Đã cập nhật mật khẩu thành công')
+      setShowPasswordModal(null)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } else {
+      toast.error('Lỗi khi cập nhật mật khẩu')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -43,10 +92,21 @@ export default function AdminUsersPage() {
             Xem và quản lý tài khoản admin / editor.
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-800 border border-gray-300 hover:bg-gray-50">
-          <span className="material-icons-outlined text-sm">person_add</span>
-          <span>Mời Người Dùng</span>
-        </button>
+        {currentUser && (
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-900">{currentUser.name}</p>
+              <p className="text-xs text-gray-500">{currentUser.email}</p>
+            </div>
+            <button
+              onClick={() => setShowPasswordModal(currentUser.id)}
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-800 border border-gray-300 hover:bg-gray-50"
+            >
+              <span className="material-icons-outlined text-sm">lock</span>
+              <span>Đổi mật khẩu</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -98,6 +158,13 @@ export default function AdminUsersPage() {
                     <td className="py-2 pr-2 text-right">
                       <div className="inline-flex items-center gap-1">
                         <button 
+                          onClick={() => setShowPasswordModal(user.id)}
+                          className="inline-flex items-center justify-center rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:border-primary hover:text-primary"
+                          title="Đổi mật khẩu"
+                        >
+                          <span className="material-icons-outlined text-sm">lock</span>
+                        </button>
+                        <button 
                           onClick={() => handleToggleStatus(user)}
                           className="inline-flex items-center justify-center rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:border-primary hover:text-primary"
                         >
@@ -139,6 +206,73 @@ export default function AdminUsersPage() {
                 className="inline-flex items-center justify-center rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
               >
                 Vô hiệu hóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => {
+          setShowPasswordModal(null)
+          setCurrentPassword('')
+          setNewPassword('')
+          setConfirmPassword('')
+        }}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Đổi Mật Khẩu</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu hiện tại</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:ring-primary focus:border-primary"
+                  placeholder="Nhập mật khẩu hiện tại"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:ring-primary focus:border-primary"
+                  placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:ring-primary focus:border-primary"
+                  placeholder="Nhập lại mật khẩu mới"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end mt-6">
+              <button
+                onClick={() => {
+                  setShowPasswordModal(null)
+                  setCurrentPassword('')
+                  setNewPassword('')
+                  setConfirmPassword('')
+                }}
+                disabled={changingPassword}
+                className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => handleChangePassword(showPasswordModal)}
+                disabled={changingPassword}
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+              >
+                {changingPassword ? 'Đang cập nhật...' : 'Cập nhật'}
               </button>
             </div>
           </div>

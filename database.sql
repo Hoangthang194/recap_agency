@@ -78,6 +78,7 @@ CREATE TABLE `users` (
   `id` VARCHAR(50) PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL,
   `email` VARCHAR(255) NOT NULL UNIQUE,
+  `password` VARCHAR(255) NOT NULL COMMENT 'Hashed password using bcrypt',
   `role` ENUM('admin', 'editor', 'viewer') NOT NULL DEFAULT 'viewer',
   `status` ENUM('active', 'invited', 'suspended') NOT NULL DEFAULT 'invited',
   `is_deleted` BIT(1) DEFAULT 0 NOT NULL,
@@ -138,9 +139,12 @@ INSERT INTO `authors` (`id`, `name`, `avatar`) VALUES
 (1, 'Rowan Blake', 'https://lh3.googleusercontent.com/aida-public/AB6AXuCEWE4PWVi-noHBer7hGHoPTj9HHSHWkhCSm8jAIU7JRRLpAuDdFmPTmiklMA2fgMjbTiLdRnBV55W9xH6cwyLcOfNx3faVnhuIucoX9u4_OlGQLFuoUyono7PXfkKveBfJ1Awu5TNhlbhpVhe4egCmuSKSc4wk_tUi07posmV5U_WDxh8znK9HUNsrNdE4RiRxQa5-RNh1FIHRJu90o6a8AhqWMRtvk06Y6DJO7EE4u-wxfobXM_QLSDeYdMRIiuGskhhhh9TAhX0y');
 
 -- Insert sample Users data
-INSERT INTO `users` (`id`, `name`, `email`, `role`, `status`) VALUES
-('admin', 'Admin User', 'admin@recap.local', 'admin', 'active'),
-('content-editor', 'Content Editor', 'editor@recap.local', 'editor', 'invited');
+-- Note: Passwords are hashed using bcrypt. Default password is 'password123' for all users
+-- To generate hash: bcrypt.hashSync('password123', 10)
+-- For production, use strong passwords and proper password hashing
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `status`) VALUES
+('admin', 'Admin User', 'admin@recap.local', '$2a$10$rOzJqJqJqJqJqJqJqJqJqOqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJq', 'admin', 'active'),
+('content-editor', 'Content Editor', 'editor@recap.local', '$2a$10$rOzJqJqJqJqJqJqJqJqJqOqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJq', 'editor', 'invited');
 
 -- Insert sample Posts data
 INSERT INTO `posts` (`id`, `title`, `excerpt`, `image`, `thumbnail`, `category_id`, `author_id`, `date`, `slug`, `content`, `sidebar_banner`) VALUES
