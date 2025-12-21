@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useCategories } from '@/hooks/useCategories'
-import { areas, countries } from '@/data'
+import { useAreas } from '@/hooks/useAreas'
+import { useCountries } from '@/hooks/useCountries'
 
 interface UploadedImage {
   fileName: string
@@ -18,6 +19,8 @@ export default function AdminEditCategoryPage() {
   const params = useParams<{ id: string }>()
   const categoryId = params?.id as string
   const { category, loading: loadingCategory, updateCategory, creating, error: updateError, getCategoryById } = useCategories()
+  const { countries, fetchCountries } = useCountries()
+  const { areas, fetchAreas } = useAreas()
   
   const [type, setType] = useState<'category' | 'city'>('category')
   const [name, setName] = useState('')
@@ -40,6 +43,12 @@ export default function AdminEditCategoryPage() {
       getCategoryById(categoryId)
     }
   }, [categoryId, getCategoryById])
+
+  // Load areas and countries for dropdowns
+  useEffect(() => {
+    fetchCountries()
+    fetchAreas()
+  }, [fetchCountries, fetchAreas])
 
   // Populate form when category is loaded
   useEffect(() => {

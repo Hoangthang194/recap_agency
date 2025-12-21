@@ -2,48 +2,69 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
-const JWT_SECRET = process.env.JWT_SECRET
+// Use the environment JWT secret; fall back to the same default used in
+// `app/api/auth/login/route.ts` so development doesn't break if `.env.local`
+// wasn't loaded. IMPORTANT: keep a real secret in production and remove
+// this fallback for security.
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  
 
-  // Chỉ protect các route /admin/* trừ /admin/login
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-    const token =
-      request.cookies.get('auth_token')?.value ||
-      request.headers.get('authorization')?.replace('Bearer ', '')
-
+  // Only protect admin routes (except login and API routes)
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/api')) {
+    // Get token from cookie or Authorization header
+    const token = 
+  request.cookies.get('auth_token')?.value ||
+  request.headers.get('authorization')?.replace('Bearer ', '')
     if (!token) {
-      const loginUrl = new URL('/admin/login', request.url)
+      const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
 
     try {
-      if (!JWT_SECRET) throw new Error('JWT_SECRET is not configured')
-
+      // Verify token using jose (Edge Runtime compatible)
+      if (!JWT_SECRET) {
+        throw new Error('JWT_SECRET is not configured')
+      }
+      
+      // Convert secret to Uint8Array for jose
       const secret = new TextEncoder().encode(JWT_SECRET)
+      
+      // Verify token (async in jose)
       await jwtVerify(token, secret)
-
-      // Token hợp lệ → tiếp tục
+      
+      // Token is valid, continue
       return NextResponse.next()
     } catch (error: any) {
-      console.error('JWT verify failed:', error)
 
-      const loginUrl = new URL('/admin/login', request.url)
+      
+      const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
-
+      
+      // Clear invalid token cookie
       const response = NextResponse.redirect(loginUrl)
-      response.cookies.delete('auth_token') // xóa token invalid
+      response.cookies.delete('auth_token')
       return response
     }
   }
-
-  // Cho các route khác
+  
+  // Allow all other routes
   return NextResponse.next()
 }
 
-// Matcher chỉ áp dụng cho admin routes
 export const config = {
-  matcher: ['/admin/:path*'], // Chỉ apply middleware cho /admin/*
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder files
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

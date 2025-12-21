@@ -32,6 +32,22 @@ export default function AdminCategoriesPage() {
     })
   }, [categories, search, filterType])
 
+  // Client-side pagination
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
+  const totalItems = filteredCategories.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [totalPages, page])
+
+  const paginatedCategories = useMemo(() => {
+    const start = (page - 1) * pageSize
+    return filteredCategories.slice(start, start + pageSize)
+  }, [filteredCategories, page, pageSize])
+
   const handleDelete = async () => {
     if (!deleteConfirm) return
 
@@ -141,7 +157,7 @@ export default function AdminCategoriesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredCategories.map((cat) => (
+                {paginatedCategories.map((cat) => (
                 <tr key={cat.id} className="border-b border-gray-100 last:border-0">
                   <td className="py-2 pr-4 text-gray-900 font-medium">{cat.name}</td>
                   <td className="py-2 pr-4">
@@ -175,7 +191,7 @@ export default function AdminCategoriesPage() {
                   </td>
                 </tr>
                 ))}
-                {filteredCategories.length === 0 && (
+                {paginatedCategories.length === 0 && (
                   <tr>
                     <td colSpan={5} className="py-6 text-center text-xs text-gray-500">
                       {categories.length === 0 
@@ -189,6 +205,38 @@ export default function AdminCategoriesPage() {
           </div>
         </div>
       )}
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between mt-3">
+        <div className="text-sm text-gray-600">
+          Hiển thị {Math.min((page - 1) * pageSize + 1, totalItems)}–{Math.min(page * pageSize, totalItems)} của {totalItems}
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={pageSize}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
+            className="rounded border-gray-300"
+          >
+            <option value={5}>5 / trang</option>
+            <option value={10}>10 / trang</option>
+            <option value={25}>25 / trang</option>
+          </select>
+
+          <div className="inline-flex items-center gap-1">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-3 py-1 rounded border border-gray-200 disabled:opacity-50"
+            >Prev</button>
+            <span className="px-2 text-sm">{page} / {totalPages}</span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-3 py-1 rounded border border-gray-200 disabled:opacity-50"
+            >Next</button>
+          </div>
+        </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
