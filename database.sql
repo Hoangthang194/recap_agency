@@ -2,6 +2,7 @@
 -- Created based on data.ts structure
 
 -- Drop tables if they exist (for fresh setup)
+DROP TABLE IF EXISTS `contact_messages`;
 DROP TABLE IF EXISTS `posts`;
 DROP TABLE IF EXISTS `categories`;
 DROP TABLE IF EXISTS `authors`;
@@ -88,6 +89,21 @@ CREATE TABLE `users` (
   INDEX `idx_role` (`role`),
   INDEX `idx_status` (`status`),
   INDEX `idx_is_deleted` (`is_deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create Contact Messages table
+CREATE TABLE `contact_messages` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `email` VARCHAR(255) NOT NULL,
+  `subject` VARCHAR(255) NOT NULL,
+  `message` TEXT NOT NULL,
+  `is_read` BIT(1) DEFAULT 0 NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_email` (`email`),
+  INDEX `idx_is_read` (`is_read`),
+  INDEX `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create Posts table

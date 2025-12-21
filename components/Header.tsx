@@ -155,8 +155,8 @@ const Header: React.FC = () => {
                             <Link href="/" className="flex items-center group">
                                 <div className="relative h-8 flex items-center transition-transform group-hover:scale-105">
                                     <Image 
-                                        src="/assets/logo.webp" 
-                                        alt="Recap" 
+                                        src="/assets/zerra.png" 
+                                        alt="ZERRA" 
                                         width={101} 
                                         height={29}
                                         className="object-contain h-8 w-auto"
@@ -328,14 +328,14 @@ const Header: React.FC = () => {
 
                     <div className="flex items-center gap-2 sm:gap-4">
                         {/* Desktop actions */}
-                        <button className="hidden md:block p-2 text-gray-400 hover:text-primary transition-colors">
+                        {/* <button className="hidden md:block p-2 text-gray-400 hover:text-primary transition-colors">
                             <span className="material-icons-outlined text-xl">search</span>
                         </button>
                         <button className="hidden md:block p-2 text-gray-400 hover:text-primary transition-colors">
                             <span className="material-icons-outlined text-xl">dark_mode</span>
-                        </button>
+                        </button> */}
                          <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block"></div>
-                        <a href="#" className="hidden sm:inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-full shadow-sm text-white bg-primary hover:bg-primary-hover transition-all transform hover:-translate-y-0.5">
+                        <a href="/contact" className="hidden sm:inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-full shadow-sm text-white bg-primary hover:bg-primary-hover transition-all transform hover:-translate-y-0.5">
                             Buy Now
                         </a>
                         {/* Mobile menu button */}
@@ -370,8 +370,8 @@ const Header: React.FC = () => {
                     <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-200 px-4 py-4">
                         <div className="flex items-center">
                             <Image
-                                src="/assets/logo.webp"
-                                alt="Recap"
+                                src="/assets/zerra.png"
+                                alt="ZERRA"
                                 width={101}
                                 height={29}
                                 className="h-7 w-auto object-contain"

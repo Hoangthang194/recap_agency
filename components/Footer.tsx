@@ -8,13 +8,14 @@ const Footer: React.FC = () => {
     return (
         <footer className="bg-white border-t border-gray-100 pt-16 pb-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-8 mb-16">
-                    <div className="lg:col-span-2 pr-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
+                    {/* Logo & Description */}
+                    <div className="lg:col-span-1">
                         <Link href="/" className="flex items-center gap-2 mb-6 group">
                             <div className="relative h-8 flex items-center transition-transform group-hover:scale-105">
                                 <Image 
-                                    src="/assets/logo.webp" 
-                                    alt="Recap Logo" 
+                                    src="/assets/zerra.png" 
+                                    alt="ZERRA Logo" 
                                     width={101} 
                                     height={29}
                                     className="object-contain h-8 w-auto"
@@ -29,45 +30,90 @@ const Footer: React.FC = () => {
                         </p>
                     </div>
 
+                    {/* Pages */}
                     <div>
-                        <h3 className="text-xs font-bold text-primary uppercase tracking-wider mb-6">Demos</h3>
+                        <h3 className="text-xs font-bold text-primary uppercase tracking-wider mb-6">Pages</h3>
                         <ul className="space-y-4">
-                            {['Classic Grid', 'Classic List', 'Featured Posts', 'Hero Slider', 'Full Posts'].map((link) => (
-                                <li key={link}><a href="#" className="text-sm text-gray-600 hover:text-primary font-medium transition-colors">{link}</a></li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Categories</h3>
-                        <ul className="space-y-4">
-                             {['Education', 'Business', 'Startup', 'Tech'].map((link) => (
-                                <li key={link}><a href="#" className="text-sm text-gray-600 hover:text-primary font-medium transition-colors">{link}</a></li>
-                            ))}
-                        </ul>
-                    </div>
-
-                     <div>
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Pages</h3>
-                        <ul className="space-y-4">
-                             {['Categories', 'About', '404 Page'].map((link) => (
-                                <li key={link}><a href="#" className="text-sm text-gray-600 hover:text-primary font-medium transition-colors">{link}</a></li>
-                            ))}
+                            <li>
+                                <Link href="/" className="text-sm text-gray-600 hover:text-primary font-medium transition-colors">
+                                    Home
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/categories" className="text-sm text-gray-600 hover:text-primary font-medium transition-colors">
+                                    Categories
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/about" className="text-sm text-gray-600 hover:text-primary font-medium transition-colors">
+                                    About
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/contact" className="text-sm text-gray-600 hover:text-primary font-medium transition-colors">
+                                    Contact
+                                </Link>
+                            </li>
                         </ul>
                     </div>
                     
-                    <div className="flex flex-col gap-4 items-start lg:items-end">
-                         <div className="flex gap-2">
-                             {[
-                                 {icon: 'close', label: 'X'},
-                                 {icon: 'public', label: 'Web'},
-                                 {icon: 'rss_feed', label: 'RSS'}
-                             ].map((social, idx) => (
-                                 <button key={idx} className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
-                                     <span className="material-icons-outlined text-lg">{social.icon}</span>
-                                 </button>
-                             ))}
-                         </div>
+                    {/* Contact */}
+                    <div>
+                        <h3 className="text-xs font-bold text-primary uppercase tracking-wider mb-6">Contact</h3>
+                        <ul className="space-y-4">
+                            <li>
+                                <div className="flex items-start gap-2">
+                                    <span className="material-icons-outlined text-base text-gray-400 mt-0.5">email</span>
+                                    <a href="mailto:marketing@kafinity.agency" className="text-sm text-gray-600 hover:text-primary font-medium transition-colors">
+                                        marketing@kafinity.agency
+                                    </a>
+                                </div>
+                            </li>
+                            <li>
+                                <div className="flex items-start gap-2">
+                                    <span className="material-icons-outlined text-base text-gray-400 mt-0.5">phone</span>
+                                    <a href="tel:+85231234588" className="text-sm text-gray-600 hover:text-primary font-medium transition-colors">
+                                        +852 3123 4588
+                                    </a>
+                                </div>
+                            </li>
+                            <li>
+                                <div className="flex items-start gap-2">
+                                    <span className="material-icons-outlined text-base text-gray-400 mt-0.5">location_on</span>
+                                    <div className="text-sm text-gray-600 leading-relaxed">
+                                        21/F, Harbour View Center<br />
+                                        168 Gloucester Road<br />
+                                        Wan Chai, Hong Kong
+                                    </div>
+                                </div>
+                            </li>
+                            <li>
+                                <div className="flex items-start gap-2">
+                                    <span className="material-icons-outlined text-base text-gray-400 mt-0.5">schedule</span>
+                                    <div className="text-sm text-gray-600 leading-relaxed">
+                                        Mon-Fri: 9:00 AM - 6:00 PM<br />
+                                        Sat: 10:00 AM - 4:00 PM<br />
+                                        Sun: Closed
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    {/* Social Links */}
+                    <div>
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Follow Us</h3>
+                        <div className="flex gap-2">
+                            {[
+                                {icon: 'close', label: 'X'},
+                                {icon: 'public', label: 'Web'},
+                                {icon: 'rss_feed', label: 'RSS'}
+                            ].map((social, idx) => (
+                                <button key={idx} className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                                    <span className="material-icons-outlined text-lg">{social.icon}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 

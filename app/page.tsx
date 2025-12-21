@@ -56,22 +56,35 @@ export default function Home() {
   const heroSidePosts = posts.slice(0, 4);
   const gridPosts = posts.slice(0, 9);
 
-  // Loading state
-  if (postsLoading && posts.length === 0) {
+  // Combined loading state - show full page loader while any API is loading
+  const isLoading = postsLoading || categoriesLoading;
+
+  // Full page loading state
+  if (isLoading && posts.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="text-sm text-gray-500">Đang tải bài viết...</div>
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <div className="text-sm font-medium text-gray-600 mb-1">Đang tải dữ liệu...</div>
+          <div className="text-xs text-gray-400">
+            {postsLoading && categoriesLoading && 'Đang tải bài viết và danh mục...'}
+            {postsLoading && !categoriesLoading && 'Đang tải bài viết...'}
+            {!postsLoading && categoriesLoading && 'Đang tải danh mục...'}
+          </div>
         </div>
       </div>
     );
   }
 
-  // No posts state
-  if (!heroPost || posts.length === 0) {
+  // No posts state (only show if not loading)
+  if (!isLoading && (!heroPost || posts.length === 0)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
+          <span className="material-icons-outlined text-6xl text-gray-300 mb-4 block">article</span>
           <div className="text-sm text-gray-500">Chưa có bài viết nào</div>
         </div>
       </div>

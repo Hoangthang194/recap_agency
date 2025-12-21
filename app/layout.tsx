@@ -81,31 +81,58 @@ export default function RootLayout({
               <nav className="flex-1 px-4 py-6 space-y-1 text-sm">
                 {/* <a
                   href="/admin"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    pathname === '/admin' 
+                      ? 'bg-primary/10 text-primary font-semibold' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
                   <span className="material-icons-outlined text-base">space_dashboard</span>
                   <span>Tổng Quan</span>
                 </a> */}
                 <a
                   href="/admin/posts"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    pathname.startsWith('/admin/posts') 
+                      ? 'bg-primary/10 text-primary font-semibold' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
                   <span className="material-icons-outlined text-base">article</span>
                   <span>Bài Viết</span>
                 </a>
                 <a
                   href="/admin/categories"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    pathname.startsWith('/admin/categories') 
+                      ? 'bg-primary/10 text-primary font-semibold' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
                   <span className="material-icons-outlined text-base">folder</span>
                   <span>Danh Mục</span>
                 </a>
                 <a
                   href="/admin/users"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    pathname.startsWith('/admin/users') 
+                      ? 'bg-primary/10 text-primary font-semibold' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
                   <span className="material-icons-outlined text-base">group</span>
                   <span>Tài Khoản</span>
+                </a>
+                <a
+                  href="/admin/messages"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    pathname.startsWith('/admin/messages') 
+                      ? 'bg-primary/10 text-primary font-semibold' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <span className="material-icons-outlined text-base">email</span>
+                  <span>Tin Nhắn</span>
                 </a>
               </nav>
               <div className="px-4 py-4 border-t border-gray-200 text-xs text-gray-500">

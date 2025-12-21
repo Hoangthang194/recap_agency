@@ -1,17 +1,35 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { usePosts } from '@/hooks'
 
 export default function AdminDashboardPage() {
   const router = useRouter()
   const { posts, loading, fetchPosts } = usePosts()
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
   
   // Fetch posts on mount
   useEffect(() => {
     fetchPosts()
   }, [fetchPosts])
+  
+  // Fetch unread messages count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await fetch('/api/contact?isRead=false')
+        const data = await response.json()
+        if (data.success) {
+          setUnreadMessagesCount(data.count || 0)
+        }
+      } catch (error) {
+        console.error('Error fetching unread messages count:', error)
+      }
+    }
+    fetchUnreadCount()
+  }, [])
   
   // Check authentication (middleware will handle redirect)
   useEffect(() => {
@@ -50,7 +68,7 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Tổng Bài Viết
@@ -69,6 +87,25 @@ export default function AdminDashboardPage() {
           </p>
           <p className="mt-2 text-3xl font-bold text-gray-900">1</p>
         </div>
+        <Link
+          href="/admin/messages"
+          className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Tin Nhắn
+            </p>
+            {unreadMessagesCount > 0 && (
+              <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold text-white bg-primary rounded-full">
+                {unreadMessagesCount}
+              </span>
+            )}
+          </div>
+          <p className="mt-2 text-3xl font-bold text-gray-900 group-hover:text-primary transition-colors">
+            {unreadMessagesCount > 0 ? unreadMessagesCount : '0'}
+          </p>
+          <p className="mt-1 text-xs text-gray-400">Chưa đọc</p>
+        </Link>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
