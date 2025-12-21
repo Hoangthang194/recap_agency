@@ -6,60 +6,44 @@ const JWT_SECRET = process.env.JWT_SECRET
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-      const token = 
-  request.cookies.get('auth_token')?.value ||
-  request.headers.get('authorization')?.replace('Bearer ', '')
-  // Only protect admin routes (except login and API routes)
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/api')) {
-    // Get token from cookie or Authorization header
+
+  // Chỉ protect các route /admin/* trừ /admin/login
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    const token =
+      request.cookies.get('auth_token')?.value ||
+      request.headers.get('authorization')?.replace('Bearer ', '')
 
     if (!token) {
-      const loginUrl = new URL('/login', request.url)
+      const loginUrl = new URL('/admin/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
 
     try {
-      // Verify token using jose (Edge Runtime compatible)
-      if (!JWT_SECRET) {
-        throw new Error('JWT_SECRET is not configured')
-      }
-      
-      // Convert secret to Uint8Array for jose
+      if (!JWT_SECRET) throw new Error('JWT_SECRET is not configured')
+
       const secret = new TextEncoder().encode(JWT_SECRET)
-      
-      // Verify token (async in jose)
       await jwtVerify(token, secret)
-      
-      // Token is valid, continue
+
+      // Token hợp lệ → tiếp tục
       return NextResponse.next()
     } catch (error: any) {
+      console.error('JWT verify failed:', error)
 
-      
-      const loginUrl = new URL('/login', request.url)
+      const loginUrl = new URL('/admin/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
-      
-      // Clear invalid token cookie
+
       const response = NextResponse.redirect(loginUrl)
-      response.cookies.delete('auth_token')
+      response.cookies.delete('auth_token') // xóa token invalid
       return response
     }
   }
-  
-  // Allow all other routes
+
+  // Cho các route khác
   return NextResponse.next()
 }
 
+// Matcher chỉ áp dụng cho admin routes
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder files
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/admin/:path*'], // Chỉ apply middleware cho /admin/*
 }
