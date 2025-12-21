@@ -165,6 +165,14 @@ function LazyImage({
       };
     }
 
+    if (!status || !('width' in status) || !('height' in status)) {
+      return {
+        height,
+        maxWidth,
+        width,
+      };
+    }
+
     // Use natural dimensions if available, otherwise fallback to defaults
     const naturalWidth = status.width;
     const naturalHeight = status.height;

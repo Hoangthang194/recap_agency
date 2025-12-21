@@ -171,7 +171,7 @@ export default function ExcalidrawModal({
     setDiscardModalOpen(true);
   };
 
-  function ShowDiscardDialog(): JSX.Element {
+  function ShowDiscardDialog() {
     return (
       <Modal
         title="Discard"

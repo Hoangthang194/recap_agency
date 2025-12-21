@@ -281,8 +281,9 @@ function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       onSelect: () =>
         editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
           altText: 'Cat typing on a laptop',
-          src: catTypingGif,
+          src: catTypingGif.src,
         }),
+      
     }),
     new ComponentPickerOption('Image', {
       icon: <i className="icon image" />,
@@ -371,6 +372,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
         onSelectOption={onSelectOption}
         triggerFn={checkForTriggerMatch}
         options={options}
+        menuRenderFn={() => <div>Menu</div>}
       />
     </>
   );

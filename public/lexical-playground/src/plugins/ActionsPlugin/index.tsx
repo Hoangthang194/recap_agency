@@ -96,13 +96,11 @@ import {INITIAL_SETTINGS} from '../../appSettings';
 import useFlashMessage from '../../hooks/useFlashMessage';
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
-import {docFromHash, docToHash} from '../../utils/docSerialization';
 import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
 import {
   SPEECH_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
 } from '../SpeechToTextPlugin';
-import {SHOW_VERSIONS_COMMAND} from '../VersionsPlugin';
 
 async function sendEditorState(editor: LexicalEditor): Promise<void> {
   const stringifiedEditorState = JSON.stringify(editor.getEditorState());
@@ -144,7 +142,6 @@ async function validateEditorState(editor: LexicalEditor): Promise<void> {
 
 async function shareDoc(doc: SerializedDocument): Promise<void> {
   const url = new URL(window.location.toString());
-  url.hash = await docToHash(doc);
   const newUrl = url.toString();
   window.history.replaceState({}, '', newUrl);
   await window.navigator.clipboard.writeText(newUrl);
@@ -169,12 +166,6 @@ export default function ActionsPlugin({
     if (INITIAL_SETTINGS.isCollab) {
       return;
     }
-    docFromHash(window.location.hash).then((doc) => {
-      if (doc && doc.source === 'Playground') {
-        editor.setEditorState(editorStateFromSerializedDocument(editor, doc));
-        editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
-      }
-    });
   }, [editor]);
   useEffect(() => {
     return mergeRegister(
@@ -359,7 +350,6 @@ export default function ActionsPlugin({
             <button
               className="action-button versions"
               onClick={() => {
-                editor.dispatchCommand(SHOW_VERSIONS_COMMAND, undefined);
               }}>
               <i className="versions" />
             </button>

@@ -568,11 +568,6 @@ class MentionTypeaheadOption extends MenuOption {
     super(name);
     this.name = name;
     this.picture = picture;
-    this.title = (
-      <>
-        {picture} {name}
-      </>
-    );
   }
 }
 
@@ -633,6 +628,7 @@ export default function NewMentionsPlugin(): JSX.Element | null {
       onSelectOption={onSelectOption}
       triggerFn={checkForMentionMatch}
       options={options}
+      menuRenderFn={() => <div>Menu</div>}
     />
   );
 }

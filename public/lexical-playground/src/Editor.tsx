@@ -83,7 +83,6 @@ import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
-import {VersionsPlugin} from './plugins/VersionsPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 import InitialHtmlPlugin from './plugins/InitialHtmlPlugin';
@@ -212,7 +211,6 @@ export default function Editor(): JSX.Element {
                     id={COLLAB_DOC_ID}
                     shouldBootstrap={!skipCollaborationInit}
                   />
-                  <VersionsPlugin id={COLLAB_DOC_ID} />
                 </>
               ) : (
                 <CollaborationPlugin
@@ -258,7 +256,6 @@ export default function Editor(): JSX.Element {
             <ClickableLinkPlugin disabled={isEditable} />
             <HorizontalRulePlugin />
             <EquationsPlugin />
-            <ExcalidrawPlugin />
             <TabFocusPlugin />
             <TabIndentationPlugin />
             <CollapsiblePlugin />

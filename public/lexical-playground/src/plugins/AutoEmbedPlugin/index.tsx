@@ -257,6 +257,7 @@ export default function AutoEmbedPlugin(): JSX.Element {
         embedConfigs={EmbedConfigs}
         onOpenEmbedModalForConfig={openEmbedModal}
         getMenuOptions={getMenuOptions}
+        menuRenderFn={() => <div>Menu</div>}
       />
     </>
   );

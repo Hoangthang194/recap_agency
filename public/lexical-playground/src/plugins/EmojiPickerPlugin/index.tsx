@@ -125,6 +125,7 @@ export default function EmojiPickerPlugin() {
       onSelectOption={onSelectOption}
       triggerFn={checkForTriggerMatch}
       options={options}
+      menuRenderFn={() => <div>Menu</div>}
     />
   );
 }
