@@ -115,7 +115,7 @@ export default function CategoryPage() {
             {categoryPosts.map((post, idx) => (
               <div key={post.id} className="break-inside-avoid bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 group">
                 <Link href={getPostUrl(post)}>
-                  <img src={post.image} alt={post.title} className="w-full object-cover" />
+                  <img src={post.thumbnail || post.image} alt={post.title} className="w-full object-cover" />
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="material-icons-outlined text-sm text-blue-500">folder_open</span>
