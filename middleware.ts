@@ -6,14 +6,13 @@ const JWT_SECRET = process.env.JWT_SECRET
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  
-
+      const token = 
+  request.cookies.get('auth_token')?.value ||
+  request.headers.get('authorization')?.replace('Bearer ', '')
   // Only protect admin routes (except login and API routes)
   if (pathname.startsWith('/admin') && !pathname.startsWith('/api')) {
     // Get token from cookie or Authorization header
-    const token = 
-  request.cookies.get('auth_token')?.value ||
-  request.headers.get('authorization')?.replace('Bearer ', '')
+
     if (!token) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
