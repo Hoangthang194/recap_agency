@@ -98,14 +98,12 @@ export async function POST(request: NextRequest) {
     );
 
     // Set HTTP-only cookie for security
-    // NOTE: For local development over HTTP we set `secure: false` so the
-    // browser will accept the cookie. In production ensure HTTPS and use
-    // `secure: true` (or keep using NODE_ENV === 'production').
     response.cookies.set('auth_token', token, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
+
       path: '/',
     });
 

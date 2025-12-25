@@ -2,11 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
-// Use the environment JWT secret; fall back to the same default used in
-// `app/api/auth/login/route.ts` so development doesn't break if `.env.local`
-// wasn't loaded. IMPORTANT: keep a real secret in production and remove
-// this fallback for security.
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl

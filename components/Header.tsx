@@ -328,14 +328,14 @@ const Header: React.FC = () => {
 
                     <div className="flex items-center gap-2 sm:gap-4">
                         {/* Desktop actions */}
-                        {/* <button className="hidden md:block p-2 text-gray-400 hover:text-primary transition-colors">
+                        <button className="hidden md:block p-2 text-gray-400 hover:text-primary transition-colors">
                             <span className="material-icons-outlined text-xl">search</span>
                         </button>
                         <button className="hidden md:block p-2 text-gray-400 hover:text-primary transition-colors">
                             <span className="material-icons-outlined text-xl">dark_mode</span>
-                        </button> */}
+                        </button>
                          <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block"></div>
-                        <a href="/contact" className="hidden sm:inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-full shadow-sm text-white bg-primary hover:bg-primary-hover transition-all transform hover:-translate-y-0.5">
+                        <a href="#" className="hidden sm:inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-full shadow-sm text-white bg-primary hover:bg-primary-hover transition-all transform hover:-translate-y-0.5">
                             Buy Now
                         </a>
                         {/* Mobile menu button */}

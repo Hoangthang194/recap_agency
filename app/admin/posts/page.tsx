@@ -64,22 +64,6 @@ export default function AdminPostsPage() {
     })
   }, [posts, search, category])
 
-  // Pagination (client-side)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-
-  const totalItems = filteredPosts.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages)
-  }, [totalPages, page])
-
-  const paginatedPosts = useMemo(() => {
-    const start = (page - 1) * pageSize
-    return filteredPosts.slice(start, start + pageSize)
-  }, [filteredPosts, page, pageSize])
-
   const handleDelete = async (postId: string) => {
     setDeleting(true)
     const success = await deletePost(postId)
@@ -278,7 +262,7 @@ export default function AdminPostsPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedPosts.map((post) => {
+                {filteredPosts.map((post) => {
                   // Find category name
                   const categoryName = categories.find(cat => cat.id === post.category)?.name || post.category
                   // Ensure post.id is a string and valid
@@ -329,7 +313,7 @@ export default function AdminPostsPage() {
                     </tr>
                   )
                 })}
-                {paginatedPosts.length === 0 && !postsLoading && (
+                {filteredPosts.length === 0 && !postsLoading && (
                   <tr>
                     <td colSpan={5} className="py-6 text-center text-xs text-gray-500">
                       {posts.length === 0
@@ -342,38 +326,6 @@ export default function AdminPostsPage() {
             </table>
           </div>
         )}
-      </div>
-
-      {/* Pagination Controls */}
-      <div className="flex items-center justify-between mt-3">
-        <div className="text-sm text-gray-600">
-          Hiển thị {Math.min((page - 1) * pageSize + 1, totalItems)}–{Math.min(page * pageSize, totalItems)} của {totalItems}
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={pageSize}
-            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
-            className="rounded border-gray-300"
-          >
-            <option value={5}>5 / trang</option>
-            <option value={10}>10 / trang</option>
-            <option value={25}>25 / trang</option>
-          </select>
-
-          <div className="inline-flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1 rounded border border-gray-200 disabled:opacity-50"
-            >Prev</button>
-            <span className="px-2 text-sm">{page} / {totalPages}</span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-3 py-1 rounded border border-gray-200 disabled:opacity-50"
-            >Next</button>
-          </div>
-        </div>
       </div>
 
       {/* Delete Confirmation Modal */}
