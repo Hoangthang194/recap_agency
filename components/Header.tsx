@@ -18,6 +18,7 @@ const Header: React.FC = () => {
     const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [mobileExpandedItems, setMobileExpandedItems] = useState<Set<string>>(new Set());
+    const [isDarkMode, setIsDarkMode] = useState(false);
     const lastScrollYRef = React.useRef(0);
     const tickingRef = React.useRef(false);
     const hasFetchedCategories = React.useRef(false);
@@ -55,6 +56,34 @@ const Header: React.FC = () => {
             fetchCountries();
         }
     }, []); // Empty dependency array - only run once on mount
+    
+    // Load dark mode preference from localStorage on mount
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+        
+        setIsDarkMode(shouldBeDark);
+        if (shouldBeDark) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, []);
+    
+    // Toggle dark mode
+    const toggleDarkMode = () => {
+        const newDarkMode = !isDarkMode;
+        setIsDarkMode(newDarkMode);
+        
+        if (newDarkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    };
     
     // Get latest 4 posts for spotlight
     const spotlightPosts = posts.slice(0, 4);
@@ -168,7 +197,7 @@ const Header: React.FC = () => {
                     </div>
 
                     <div className="hidden md:flex space-x-2 items-center">
-                        {['Home', 'Travel', 'Posts', 'About', 'Contact'].map((item) => {
+                        {['Home', 'Travel', 'Posts', 'About'].map((item) => {
                             const hasSubmenu = item === 'Travel' || item === 'Posts';
                             
                             return (
@@ -179,10 +208,6 @@ const Header: React.FC = () => {
                                         </Link>
                                     ) : item === 'About' ? (
                                         <Link href="/about" className="text-sm font-semibold text-gray-600 hover:text-primary transition-colors">
-                                            {item}
-                                        </Link>
-                                    ) : item === 'Contact' ? (
-                                        <Link href="/contact" className="text-sm font-semibold text-gray-600 hover:text-primary transition-colors">
                                             {item}
                                         </Link>
                                     ) : (
@@ -328,15 +353,18 @@ const Header: React.FC = () => {
 
                     <div className="flex items-center gap-2 sm:gap-4">
                         {/* Desktop actions */}
-                        <button className="hidden md:block p-2 text-gray-400 hover:text-primary transition-colors">
-                            <span className="material-icons-outlined text-xl">search</span>
+                        <button 
+                            onClick={toggleDarkMode}
+                            className="hidden md:block p-2 text-gray-400 hover:text-primary transition-colors"
+                            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+                        >
+                            <span className="material-icons-outlined text-xl">
+                                {isDarkMode ? 'light_mode' : 'dark_mode'}
+                            </span>
                         </button>
-                        <button className="hidden md:block p-2 text-gray-400 hover:text-primary transition-colors">
-                            <span className="material-icons-outlined text-xl">dark_mode</span>
-                        </button>
-                         <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block"></div>
+                         <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
                         <a href="#" className="hidden sm:inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-full shadow-sm text-white bg-primary hover:bg-primary-hover transition-all transform hover:-translate-y-0.5">
-                            Buy Now
+                            Contact Us
                         </a>
                         {/* Mobile menu button */}
                         <button
@@ -390,25 +418,22 @@ const Header: React.FC = () => {
 
                     {/* Menu list (scrollable) - use same items as desktop */}
                     <div className="flex-1 overflow-y-auto">
-                        {['Home', 'Travel', 'Posts', 'About', 'Contact'].map((item) => {
+                        {['Home', 'Travel', 'Posts', 'About'].map((item) => {
                             const hasSubmenu = item === 'Travel' || item === 'Posts';
                             const isExpanded = mobileExpandedItems.has(item);
                             const isActive =
                                 (item === 'Home' && pathname === '/') ||
-                                (item === 'About' && pathname === '/about') ||
-                                (item === 'Contact' && pathname === '/contact');
+                                (item === 'About' && pathname === '/about');
 
                             return (
                                 <div key={item} className="border-b border-gray-200">
-                                    {/* Simple links (Home / About / Contact) */}
+                                    {/* Simple links (Home / About) */}
                                     {!hasSubmenu ? (
                                         <Link
                                             href={
                                                 item === 'Home'
                                                     ? '/'
-                                                    : item === 'About'
-                                                    ? '/about'
-                                                    : '/contact'
+                                                    : '/about'
                                             }
                                             onClick={closeMobileMenu}
                                             className={`flex w-full items-center px-6 py-4 text-base font-semibold transition-colors ${
@@ -534,7 +559,7 @@ const Header: React.FC = () => {
                             type="button"
                             className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors"
                         >
-                            Buy Now
+                            Contact Us
                         </button>
                         <div className="flex items-center gap-3">
                             <button

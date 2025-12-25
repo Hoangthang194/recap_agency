@@ -27,7 +27,7 @@ function LoginPageContent() {
     e.preventDefault()
     
     if (!email || !password) {
-      toast.error('Vui lòng điền đầy đủ email và mật khẩu')
+      toast.error('Please fill in both email and password')
       return
     }
 
@@ -46,7 +46,7 @@ function LoginPageContent() {
       const result = await response.json()
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Đăng nhập thất bại')
+        throw new Error(result.error || 'Login failed')
       }
 
       // Store token in localStorage
@@ -64,7 +64,7 @@ function LoginPageContent() {
       const redirectUrl = searchParams?.get('redirect') || '/admin'
       console.log('🔄 Redirecting to:', redirectUrl)
       
-      toast.success('Đăng nhập thành công!', {
+      toast.success('Login successful!', {
         duration: 1000,
       })
       // Wait a moment for toast to show, then redirect
@@ -75,7 +75,7 @@ function LoginPageContent() {
         window.location.replace(redirectUrl)
       }, 500)
     } catch (err: any) {
-      toast.error(err.message || 'Đăng nhập thất bại')
+      toast.error(err.message || 'Login failed')
       console.error('Login error:', err)
     } finally {
       setLoading(false)
@@ -87,12 +87,12 @@ function LoginPageContent() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Đăng nhập vào tài khoản
+            Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Hoặc{' '}
+            Or{' '}
             <Link href="/" className="font-medium text-primary hover:text-blue-600">
-              quay lại trang chủ
+              return to homepage
             </Link>
           </p>
         </div>
@@ -116,7 +116,7 @@ function LoginPageContent() {
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
-                Mật khẩu
+                Password
               </label>
               <input
                 id="password"
@@ -127,7 +127,7 @@ function LoginPageContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
-                placeholder="Mật khẩu"
+                placeholder="Password"
               />
             </div>
           </div>
@@ -138,7 +138,7 @@ function LoginPageContent() {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
         </form>
