@@ -363,9 +363,9 @@ const Header: React.FC = () => {
                             </span>
                         </button>
                          <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
-                        <a href="#" className="hidden sm:inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-full shadow-sm text-white bg-primary hover:bg-primary-hover transition-all transform hover:-translate-y-0.5">
+                        <Link href="/contact" className="hidden sm:inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-full shadow-sm text-white bg-primary hover:bg-primary-hover transition-all transform hover:-translate-y-0.5">
                             Contact Us
-                        </a>
+                        </Link>
                         {/* Mobile menu button */}
                         <button
                             type="button"
@@ -555,12 +555,13 @@ const Header: React.FC = () => {
 
                     {/* Footer (fixed bottom) */}
                     <div className="flex flex-shrink-0 items-center justify-between border-t border-gray-200 px-4 py-4">
-                        <button
-                            type="button"
+                        <Link
+                            href="/contact"
+                            onClick={closeMobileMenu}
                             className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors"
                         >
                             Contact Us
-                        </button>
+                        </Link>
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
