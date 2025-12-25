@@ -66,6 +66,10 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+        <link rel="icon" type="image/webp" href="/assets/favicon.webp" />
+        <link rel="icon" type="image/webp" sizes="185x185" href="/assets/favicon-185x185.webp" />
+        <link rel="icon" type="image/webp" sizes="300x300" href="/assets/favicon-300x300.webp" />
+        <link rel="apple-touch-icon" sizes="185x185" href="/assets/favicon-185x185.webp" />
       </head>
       <body className={`${inter.variable} ${bricolageGrotesque.variable} antialiased font-sans`}>
         {isAdminRoute ? (
