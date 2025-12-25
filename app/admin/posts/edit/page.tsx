@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, Suspense } from 'react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -20,7 +20,7 @@ const parseDateString = (dateStr: string): string => {
   }
 }
 
-export default function AdminEditPostPage() {
+function AdminEditPostPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   
@@ -875,6 +875,18 @@ export default function AdminEditPostPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function AdminEditPostPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-sm text-gray-500">Loading...</div>
+      </div>
+    }>
+      <AdminEditPostPageContent />
+    </Suspense>
   )
 }
 

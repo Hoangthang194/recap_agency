@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Newsletter from '@/components/Newsletter'
 import { useCategories } from '@/hooks/useCategories'
 import { useCountries } from '@/hooks/useCountries'
 
-export default function CategoriesPage() {
+function CategoriesPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { categories, loading: categoriesLoading, fetchCategories } = useCategories()
@@ -248,6 +248,18 @@ export default function CategoriesPage() {
       </div>
       <Newsletter />
     </div>
+  )
+}
+
+export default function CategoriesPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-sm text-gray-500">Loading...</div>
+      </div>
+    }>
+      <CategoriesPageContent />
+    </Suspense>
   )
 }
 
