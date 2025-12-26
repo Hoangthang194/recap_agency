@@ -205,10 +205,10 @@ export default function RecapPostPage({ params }: PageProps) {
           let maxTop = -Infinity;
           
           // Get all headings from TOC items or find them dynamically
-          const headings = Object.keys(sectionRefs.current);
+          let headings = Object.keys(sectionRefs.current);
           
-          if (headings.length === 0 && mainContent) {
-            // If no refs yet, find headings directly
+          // Always refresh headings from DOM to ensure we have the latest
+          if (mainContent) {
             const headingElements = mainContent.querySelectorAll('h2, h3, h4');
             headingElements.forEach((heading) => {
               const element = heading as HTMLElement;
@@ -219,8 +219,15 @@ export default function RecapPostPage({ params }: PageProps) {
                 element.id = id;
               }
               sectionRefs.current[id] = element;
-              headings.push(id);
+              if (!headings.includes(id)) {
+                headings.push(id);
+              }
             });
+          }
+          
+          // If still no headings, use TOC items
+          if (headings.length === 0 && tocItems.length > 0) {
+            headings = tocItems.map(item => item.id);
           }
           
           headings.forEach((sectionId) => {
@@ -229,6 +236,14 @@ export default function RecapPostPage({ params }: PageProps) {
             // If ref not found, try querySelector as fallback
             if (!element && mainContent) {
               element = mainContent.querySelector(`#${sectionId}`) as HTMLElement;
+              if (element) {
+                sectionRefs.current[sectionId] = element;
+              }
+            }
+            
+            // Last resort: try document.getElementById
+            if (!element) {
+              element = document.getElementById(sectionId) as HTMLElement;
               if (element) {
                 sectionRefs.current[sectionId] = element;
               }
@@ -248,7 +263,9 @@ export default function RecapPostPage({ params }: PageProps) {
           // If no section found above threshold, use the first visible one
           if (!currentSection && headings.length > 0) {
             headings.forEach((sectionId) => {
-              const element = sectionRefs.current[sectionId];
+              const element = sectionRefs.current[sectionId] || 
+                             (mainContent?.querySelector(`#${sectionId}`) as HTMLElement) ||
+                             (document.getElementById(sectionId) as HTMLElement);
               if (element) {
                 const rect = element.getBoundingClientRect();
                 if (rect.top >= 0 && rect.top <= windowHeight && !currentSection) {
@@ -538,48 +555,68 @@ export default function RecapPostPage({ params }: PageProps) {
   useEffect(() => {
     if (!contentRef.current) return;
 
-    const contentElement = contentRef.current;
-    const headings: Array<{ id: string; label: string; level: number; element: HTMLElement }> = [];
-    
-    // Find all headings (h2, h3, h4) in the content
-    const headingElements = contentElement.querySelectorAll('h2, h3, h4');
-    
-    headingElements.forEach((heading) => {
-      const element = heading as HTMLElement;
-      let id = element.id;
+    // Use setTimeout to ensure content is fully rendered
+    const timeoutId = setTimeout(() => {
+      const contentElement = contentRef.current;
+      if (!contentElement) return;
+
+      const headings: Array<{ id: string; label: string; level: number; element: HTMLElement }> = [];
       
-      // If no ID, generate one from the text content
-      if (!id) {
-        const text = element.textContent || '';
-        id = text
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '');
-        element.id = id;
-      }
+      // Find all headings (h2, h3, h4) in the content
+      const headingElements = contentElement.querySelectorAll('h2, h3, h4');
       
-      // Get heading level (2 for h2, 3 for h3, etc.)
-      const level = parseInt(element.tagName.charAt(1));
-      const label = element.textContent || '';
+      headingElements.forEach((heading) => {
+        const element = heading as HTMLElement;
+        let id = element.id;
+        
+        // If no ID, generate one from the text content
+        if (!id) {
+          const text = element.textContent || '';
+          id = text
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+          element.id = id;
+        }
+        
+        // Get heading level (2 for h2, 3 for h3, etc.)
+        const level = parseInt(element.tagName.charAt(1));
+        const label = element.textContent || '';
+        
+        headings.push({ id, label, level, element });
+        sectionRefs.current[id] = element;
+      });
       
-      headings.push({ id, label, level, element });
-      sectionRefs.current[id] = element;
-    });
-    
-    // Update TOC items
-    setTocItems(headings.map(h => ({ id: h.id, label: h.label, level: h.level })));
-    
-    // Set first heading as active if available
-    if (headings.length > 0 && !activeSection) {
-      setActiveSection(headings[0].id);
-    }
+      // Update TOC items
+      setTocItems(headings.map(h => ({ id: h.id, label: h.label, level: h.level })));
+    }, 200);
+
+    return () => clearTimeout(timeoutId);
   }, [post, previewHtml]);
 
   // Update sections array for scroll tracking
   const sections = tocItems.map(item => item.id);
 
   const scrollToSection = (sectionId: string) => {
-    const element = sectionRefs.current[sectionId];
+    // Try ref first
+    let element = sectionRefs.current[sectionId];
+    
+    // If ref not found, try querySelector as fallback
+    if (!element && contentRef.current) {
+      element = contentRef.current.querySelector(`#${sectionId}`) as HTMLElement;
+      if (element) {
+        sectionRefs.current[sectionId] = element;
+      }
+    }
+    
+    // Last resort: try document.getElementById
+    if (!element) {
+      element = document.getElementById(sectionId) as HTMLElement;
+      if (element) {
+        sectionRefs.current[sectionId] = element;
+      }
+    }
+    
     if (element) {
       const headerOffset = 100;
       const elementPosition = element.getBoundingClientRect().top;
@@ -741,7 +778,7 @@ export default function RecapPostPage({ params }: PageProps) {
                 className="prose prose-lg prose-blue max-w-none"
                 dangerouslySetInnerHTML={{ 
                   __html: post.content.replace(
-                    /<(h[2-3])([^>]*)>([^<]+)<\/h[2-3]>/gi,
+                    /<(h[2-4])([^>]*)>([^<]+)<\/h[2-4]>/gi,
                     (match, tag, attrs, text) => {
                       const id = text
                         .toLowerCase()
@@ -1056,7 +1093,7 @@ export default function RecapPostPage({ params }: PageProps) {
                       className="prose prose-lg prose-blue max-w-none"
                       dangerouslySetInnerHTML={{ 
                         __html: loadedPost.content.replace(
-                          /<(h[2-3])([^>]*)>([^<]+)<\/h[2-3]>/gi,
+                          /<(h[2-4])([^>]*)>([^<]+)<\/h[2-4]>/gi,
                           (match, tag, attrs, text) => {
                             const id = text
                               .toLowerCase()
