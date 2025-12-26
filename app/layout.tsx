@@ -65,11 +65,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+        <title>Zerra Blog – Travel &amp; AI</title>
+        <meta name="description" content="Travel blog, AI, công nghệ và trải nghiệm toàn cầu" />
+        <meta property="og:title" content="Zerra Blog" />
+        <meta property="og:description" content="Travel & AI Blog" />
+        <meta property="og:url" content="https://zerra.blog" />
+        <meta property="og:site_name" content="Zerra Blog" />
+        <meta property="og:type" content="website" />
         <link rel="icon" type="image/webp" href="/assets/favicon.webp" />
         <link rel="icon" type="image/webp" sizes="185x185" href="/assets/favicon-185x185.webp" />
         <link rel="icon" type="image/webp" sizes="300x300" href="/assets/favicon-300x300.webp" />
         <link rel="apple-touch-icon" sizes="185x185" href="/assets/favicon-185x185.webp" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
       </head>
       <body className={`${inter.variable} ${bricolageGrotesque.variable} antialiased font-sans`}>
         {isAdminRoute ? (

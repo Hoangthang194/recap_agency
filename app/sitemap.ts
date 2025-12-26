@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { query } from '@/lib/db';
 import { getPostUrl } from '@/utils/post';
 
-const SITE_URL = process.env.SITE_URL || 'http://localhost:3000';
+const SITE_URL = process.env.SITE_URL || 'https://zerra.blog';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
@@ -27,6 +27,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       return {
         url,
         lastModified: lastMod,
+        changeFrequency: 'weekly' as const,
+        priority: 0.8,
       };
     });
 
@@ -36,15 +38,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       return {
         url,
         lastModified: lastMod,
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
       };
     });
 
     // Add some top-level static pages
     const staticEntries: MetadataRoute.Sitemap = [
-      { url: SITE_URL, lastModified: new Date().toISOString() },
-      { url: `${SITE_URL}/categories` },
-      { url: `${SITE_URL}/about` },
-      { url: `${SITE_URL}/contact` },
+      { 
+        url: SITE_URL, 
+        lastModified: new Date().toISOString(),
+        changeFrequency: 'daily' as const,
+        priority: 1.0,
+      },
+      { 
+        url: `${SITE_URL}/categories`,
+        lastModified: new Date().toISOString(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.9,
+      },
+      { 
+        url: `${SITE_URL}/about`,
+        changeFrequency: 'monthly' as const,
+        priority: 0.6,
+      },
+      { 
+        url: `${SITE_URL}/contact`,
+        changeFrequency: 'monthly' as const,
+        priority: 0.6,
+      },
     ];
 
     return [...staticEntries, ...categoryEntries, ...postEntries];
