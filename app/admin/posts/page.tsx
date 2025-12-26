@@ -14,6 +14,8 @@ export default function AdminPostsPage() {
   const [deleting, setDeleting] = useState(false)
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
   const [categorySearchQuery, setCategorySearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   
   // Use refs to track if we've already fetched to prevent multiple calls
   const hasFetchedPosts = useRef(false)
@@ -63,6 +65,17 @@ export default function AdminPostsPage() {
       return matchesSearch && matchesCategory
     })
   }, [posts, search, category])
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredPosts.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedPosts = filteredPosts.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, category])
 
   const handleDelete = async (postId: string) => {
     setDeleting(true)
@@ -262,7 +275,7 @@ export default function AdminPostsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPosts.map((post) => {
+                {paginatedPosts.map((post) => {
                   // Find category name
                   const categoryName = categories.find(cat => cat.id === post.category)?.name || post.category
                   // Ensure post.id is a string and valid
@@ -327,6 +340,143 @@ export default function AdminPostsPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {filteredPosts.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          {/* Items per page selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700">Hiển thị:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value))
+                setCurrentPage(1)
+              }}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span className="text-sm text-gray-500">
+              / {filteredPosts.length} bài viết
+            </span>
+          </div>
+
+          {/* Page info and navigation */}
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-700">
+              Trang <span className="font-semibold">{currentPage}</span> / <span className="font-semibold">{totalPages}</span>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              {/* First page */}
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Trang đầu"
+              >
+                <span className="material-icons-outlined text-base">first_page</span>
+              </button>
+              
+              {/* Previous page */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Trang trước"
+              >
+                <span className="material-icons-outlined text-base">chevron_left</span>
+              </button>
+              
+              {/* Page numbers */}
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const pages: (number | string)[] = []
+                  const maxVisible = 5
+                  
+                  if (totalPages <= maxVisible) {
+                    // Show all pages if total is small
+                    for (let i = 1; i <= totalPages; i++) {
+                      pages.push(i)
+                    }
+                  } else {
+                    // Show first page
+                    pages.push(1)
+                    
+                    if (currentPage > 3) {
+                      pages.push('...')
+                    }
+                    
+                    // Show pages around current
+                    const start = Math.max(2, currentPage - 1)
+                    const end = Math.min(totalPages - 1, currentPage + 1)
+                    
+                    for (let i = start; i <= end; i++) {
+                      pages.push(i)
+                    }
+                    
+                    if (currentPage < totalPages - 2) {
+                      pages.push('...')
+                    }
+                    
+                    // Show last page
+                    pages.push(totalPages)
+                  }
+                  
+                  return pages.map((page, index) => {
+                    if (page === '...') {
+                      return (
+                        <span key={`ellipsis-${index}`} className="px-2 text-gray-400">
+                          ...
+                        </span>
+                      )
+                    }
+                    
+                    const pageNum = page as number
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`inline-flex items-center justify-center min-w-[32px] h-8 px-2 rounded-lg border text-sm transition-colors ${
+                          currentPage === pageNum
+                            ? 'border-primary bg-primary text-white font-semibold'
+                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  })
+                })()}
+              </div>
+              
+              {/* Next page */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Trang sau"
+              >
+                <span className="material-icons-outlined text-base">chevron_right</span>
+              </button>
+              
+              {/* Last page */}
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Trang cuối"
+              >
+                <span className="material-icons-outlined text-base">last_page</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (

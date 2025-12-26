@@ -598,38 +598,111 @@ export default function RecapPostPage({ params }: PageProps) {
   const sections = tocItems.map(item => item.id);
 
   const scrollToSection = (sectionId: string) => {
-    // Try ref first
-    let element = sectionRefs.current[sectionId];
+    // Try multiple methods to find the element
+    let element: HTMLElement | null = null;
     
-    // If ref not found, try querySelector as fallback
+    // Method 1: Try ref first
+    element = sectionRefs.current[sectionId] || null;
+    
+    // Method 2: Try querySelector in contentRef
     if (!element && contentRef.current) {
       element = contentRef.current.querySelector(`#${sectionId}`) as HTMLElement;
+      if (!element) {
+        element = contentRef.current.querySelector(`[data-heading-id="${sectionId}"]`) as HTMLElement;
+      }
       if (element) {
         sectionRefs.current[sectionId] = element;
       }
     }
     
-    // Last resort: try document.getElementById
+    // Method 3: Try document.getElementById
     if (!element) {
-      element = document.getElementById(sectionId) as HTMLElement;
+      element = document.getElementById(sectionId);
+      if (element) {
+        sectionRefs.current[sectionId] = element;
+      }
+    }
+    
+    // Method 4: Try data-heading-id attribute
+    if (!element) {
+      element = document.querySelector(`[data-heading-id="${sectionId}"]`) as HTMLElement;
       if (element) {
         sectionRefs.current[sectionId] = element;
       }
     }
     
     if (element) {
-      const headerOffset = 100;
+      const headerOffset = 120; // Offset for header
       const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+      const offsetPosition = elementPosition + currentScroll - headerOffset;
 
+      // Scroll to position with smooth behavior
       window.scrollTo({
         top: offsetPosition,
         behavior: 'smooth'
       });
+    } else {
+      console.warn(`Could not find element with ID: ${sectionId}`);
     }
   };
 
   const currentIndex = post ? posts.findIndex(p => p.slug === post.slug) : -1;
+
+  // Share functions
+  const handleShare = async (platform: 'facebook' | 'twitter' | 'copy') => {
+    if (!post) return;
+    
+    const postUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const shareText = `${post.title} - ${post.excerpt}`;
+    
+    if (platform === 'facebook') {
+      const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
+      window.open(facebookUrl, '_blank', 'width=600,height=400');
+    } else if (platform === 'twitter') {
+      const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(shareText)}`;
+      window.open(twitterUrl, '_blank', 'width=600,height=400');
+    } else if (platform === 'copy') {
+      try {
+        // Try Web Share API first (mobile)
+        if (navigator.share) {
+          await navigator.share({
+            title: post.title,
+            text: post.excerpt,
+            url: postUrl,
+          });
+        } else {
+          // Fallback to clipboard API
+          await navigator.clipboard.writeText(postUrl);
+          // Show simple notification
+          const notification = document.createElement('div');
+          notification.textContent = 'Đã sao chép link vào clipboard!';
+          notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 9999;
+            font-size: 14px;
+            animation: slideIn 0.3s ease-out;
+          `;
+          document.body.appendChild(notification);
+          setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+          }, 2000);
+        }
+      } catch (err) {
+        console.error('Error sharing:', err);
+        // Fallback: show alert
+        alert('Đã sao chép link vào clipboard!');
+      }
+    }
+  };
 
   // Loading state - show loading while searching for post
   if (searchingPost || !hasSearched) {
@@ -777,16 +850,46 @@ export default function RecapPostPage({ params }: PageProps) {
               <div
                 className="prose prose-lg prose-blue max-w-none"
                 dangerouslySetInnerHTML={{ 
-                  __html: post.content.replace(
-                    /<(h[2-4])([^>]*)>([^<]+)<\/h[2-4]>/gi,
-                    (match, tag, attrs, text) => {
-                      const id = text
+                  __html: (() => {
+                    // Process content to add IDs to all headings
+                    let processedContent = post.content;
+                    const headingRegex = /<(h[2-4])([^>]*)>(.*?)<\/h[2-4]>/gi;
+                    const processedIds = new Set<string>();
+                    let idCounter = 0;
+                    
+                    processedContent = processedContent.replace(headingRegex, (match, tag, attrs, text) => {
+                      // Extract text content (remove HTML tags using regex)
+                      const textContent = text.replace(/<[^>]*>/g, '').trim();
+                      
+                      // Generate ID from text
+                      let id = textContent
                         .toLowerCase()
                         .replace(/[^a-z0-9]+/g, '-')
                         .replace(/^-+|-+$/g, '');
-                      return `<${tag}${attrs} id="${id}" data-heading-id="${id}">${text}</${tag}>`;
-                    }
-                  )
+                      
+                      // If ID is empty or already exists, add counter
+                      if (!id) {
+                        id = `heading-${idCounter++}`;
+                      } else if (processedIds.has(id)) {
+                        id = `${id}-${idCounter++}`;
+                      }
+                      
+                      processedIds.add(id);
+                      
+                      // Check if attrs already has id
+                      const hasId = /id\s*=\s*["']([^"']+)["']/i.test(attrs);
+                      if (!hasId) {
+                        return `<${tag}${attrs} id="${id}" data-heading-id="${id}">${text}</${tag}>`;
+                      } else {
+                        // Extract existing ID and use it
+                        const existingIdMatch = attrs.match(/id\s*=\s*["']([^"']+)["']/i);
+                        const existingId = existingIdMatch ? existingIdMatch[1] : id;
+                        return `<${tag}${attrs} data-heading-id="${existingId}">${text}</${tag}>`;
+                      }
+                    });
+                    
+                    return processedContent;
+                  })()
                 }}
               />
             ) : (
@@ -819,17 +922,32 @@ export default function RecapPostPage({ params }: PageProps) {
               <div className="mb-8">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">SHARE</h4>
                 <div className="flex items-center gap-3">
-                  <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-primary hover:border-primary transition-colors">
+                  <button 
+                    onClick={() => handleShare('facebook')}
+                    className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-primary hover:border-primary transition-colors"
+                    title="Share on Facebook"
+                    aria-label="Share on Facebook"
+                  >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                     </svg>
                   </button>
-                  <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-primary hover:border-primary transition-colors">
+                  <button 
+                    onClick={() => handleShare('twitter')}
+                    className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-primary hover:border-primary transition-colors"
+                    title="Share on Twitter/X"
+                    aria-label="Share on Twitter/X"
+                  >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                     </svg>
                   </button>
-                  <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-primary hover:border-primary transition-colors">
+                  <button 
+                    onClick={() => handleShare('copy')}
+                    className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-primary hover:border-primary transition-colors"
+                    title="Copy link"
+                    aria-label="Copy link to clipboard"
+                  >
                     <span className="material-icons-outlined text-sm">link</span>
                   </button>
                 </div>
@@ -1092,16 +1210,46 @@ export default function RecapPostPage({ params }: PageProps) {
                     <div
                       className="prose prose-lg prose-blue max-w-none"
                       dangerouslySetInnerHTML={{ 
-                        __html: loadedPost.content.replace(
-                          /<(h[2-4])([^>]*)>([^<]+)<\/h[2-4]>/gi,
-                          (match, tag, attrs, text) => {
-                            const id = text
+                        __html: (() => {
+                          // Process content to add IDs to all headings
+                          let processedContent = loadedPost.content;
+                          const headingRegex = /<(h[2-4])([^>]*)>(.*?)<\/h[2-4]>/gi;
+                          const processedIds = new Set<string>();
+                          let idCounter = 0;
+                          
+                          processedContent = processedContent.replace(headingRegex, (match, tag, attrs, text) => {
+                            // Extract text content (remove HTML tags using regex)
+                            const textContent = text.replace(/<[^>]*>/g, '').trim();
+                            
+                            // Generate ID from text
+                            let id = textContent
                               .toLowerCase()
                               .replace(/[^a-z0-9]+/g, '-')
                               .replace(/^-+|-+$/g, '');
-                            return `<${tag}${attrs} id="${id}" data-heading-id="${id}">${text}</${tag}>`;
-                          }
-                        )
+                            
+                            // If ID is empty or already exists, add counter
+                            if (!id) {
+                              id = `heading-${idCounter++}`;
+                            } else if (processedIds.has(id)) {
+                              id = `${id}-${idCounter++}`;
+                            }
+                            
+                            processedIds.add(id);
+                            
+                            // Check if attrs already has id
+                            const hasId = /id\s*=\s*["']([^"']+)["']/i.test(attrs);
+                            if (!hasId) {
+                              return `<${tag}${attrs} id="${id}" data-heading-id="${id}">${text}</${tag}>`;
+                            } else {
+                              // Extract existing ID and use it
+                              const existingIdMatch = attrs.match(/id\s*=\s*["']([^"']+)["']/i);
+                              const existingId = existingIdMatch ? existingIdMatch[1] : id;
+                              return `<${tag}${attrs} data-heading-id="${existingId}">${text}</${tag}>`;
+                            }
+                          });
+                          
+                          return processedContent;
+                        })()
                       }}
                     />
                   ) : (
