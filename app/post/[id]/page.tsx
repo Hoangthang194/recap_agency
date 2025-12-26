@@ -45,13 +45,14 @@ export default function SinglePostPage({ params }: PageProps) {
   
   const [post, setPost] = useState(foundPost);
   const [loadedPosts, setLoadedPosts] = useState<typeof posts[0][]>([]);
-  const [activeSection, setActiveSection] = useState('introduction');
+  const [activeSection, setActiveSection] = useState<string>('');
   const [readingProgress, setReadingProgress] = useState(0);
   const [readingTime, setReadingTime] = useState(5);
   const [estimatedReadingTime, setEstimatedReadingTime] = useState(5);
   const [loadedPostsProgress, setLoadedPostsProgress] = useState<{ [key: string]: number }>({});
   const [loadedPostsActiveSection, setLoadedPostsActiveSection] = useState<{ [key: string]: string }>({});
   const [loadedPostsReadingTime, setLoadedPostsReadingTime] = useState<{ [key: string]: number }>({});
+  const [tocItems, setTocItems] = useState<Array<{ id: string; label: string; level: number }>>([]);
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
   const loadedPostsSectionRefs = useRef<{ [postId: string]: { [key: string]: HTMLElement | null } }>({});
   const endOfPostRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -121,26 +122,45 @@ export default function SinglePostPage({ params }: PageProps) {
     }, 100);
   }, [id]);
 
-  // Initialize section refs from content HTML after render
+  // Extract headings from content HTML and create TOC dynamically
   useEffect(() => {
     if (!contentRef.current) return;
 
-    const sections = [
-      'introduction',
-      'getting-lost',
-      'popular-frameworks',
-      'support-progress',
-      'how-to-apply',
-      'conclusion'
-    ];
-
-    // Find and assign refs for each section
-    sections.forEach((sectionId) => {
-      const element = contentRef.current?.querySelector(`#${sectionId}`) as HTMLElement;
-      if (element) {
-        sectionRefs.current[sectionId] = element;
+    const contentElement = contentRef.current;
+    const headings: Array<{ id: string; label: string; level: number; element: HTMLElement }> = [];
+    
+    // Find all headings (h2, h3, h4) in the content
+    const headingElements = contentElement.querySelectorAll('h2, h3, h4');
+    
+    headingElements.forEach((heading) => {
+      const element = heading as HTMLElement;
+      let id = element.id;
+      
+      // If no ID, generate one from the text content
+      if (!id) {
+        const text = element.textContent || '';
+        id = text
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+        element.id = id;
       }
+      
+      // Get heading level (2 for h2, 3 for h3, etc.)
+      const level = parseInt(element.tagName.charAt(1));
+      const label = element.textContent || '';
+      
+      headings.push({ id, label, level, element });
+      sectionRefs.current[id] = element;
     });
+    
+    // Update TOC items
+    setTocItems(headings.map(h => ({ id: h.id, label: h.label, level: h.level })));
+    
+    // Set first heading as active if available
+    if (headings.length > 0 && !activeSection) {
+      setActiveSection(headings[0].id);
+    }
   }, [post, previewHtml]);
 
   // Initialize section refs for loaded posts
@@ -148,24 +168,28 @@ export default function SinglePostPage({ params }: PageProps) {
     loadedPosts.forEach((loadedPost) => {
       const postContentElement = document.querySelector(`[data-post-id="${loadedPost.id}"]`) as HTMLElement;
       if (postContentElement) {
-        const sections = [
-          'introduction',
-          'getting-lost',
-          'popular-frameworks',
-          'support-progress',
-          'how-to-apply',
-          'conclusion'
-        ];
-
         if (!loadedPostsSectionRefs.current[loadedPost.id]) {
           loadedPostsSectionRefs.current[loadedPost.id] = {};
         }
 
-        sections.forEach((sectionId) => {
-          const element = postContentElement.querySelector(`#${sectionId}`) as HTMLElement;
-          if (element) {
-            loadedPostsSectionRefs.current[loadedPost.id][sectionId] = element;
+        // Find all headings in loaded post content
+        const headingElements = postContentElement.querySelectorAll('h2, h3, h4');
+        
+        headingElements.forEach((heading) => {
+          const element = heading as HTMLElement;
+          let id = element.id;
+          
+          // If no ID, generate one from the text content
+          if (!id) {
+            const text = element.textContent || '';
+            id = text
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-|-$/g, '');
+            element.id = id;
           }
+          
+          loadedPostsSectionRefs.current[loadedPost.id][id] = element;
         });
       }
     });
@@ -204,21 +228,30 @@ export default function SinglePostPage({ params }: PageProps) {
             setReadingProgress(Math.min(100, Math.max(0, progress)));
           }
 
-          // Find active section - try refs first, then querySelector as fallback
-          const sections = [
-            'introduction',
-            'getting-lost',
-            'popular-frameworks',
-            'support-progress',
-            'how-to-apply',
-            'conclusion'
-          ];
-
-          let currentSection = 'introduction';
+          // Find active section from actual headings in content
+          let currentSection = '';
           let maxTop = -Infinity;
           
-          sections.forEach((sectionId) => {
-            // Try ref first
+          // Get all headings from TOC items or find them dynamically
+          const headings = Object.keys(sectionRefs.current);
+          
+          if (headings.length === 0 && mainContent) {
+            // If no refs yet, find headings directly
+            const headingElements = mainContent.querySelectorAll('h2, h3, h4');
+            headingElements.forEach((heading) => {
+              const element = heading as HTMLElement;
+              let id = element.id;
+              if (!id) {
+                const text = element.textContent || '';
+                id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                element.id = id;
+              }
+              sectionRefs.current[id] = element;
+              headings.push(id);
+            });
+          }
+          
+          headings.forEach((sectionId) => {
             let element = sectionRefs.current[sectionId];
             
             // If ref not found, try querySelector as fallback
@@ -239,18 +272,60 @@ export default function SinglePostPage({ params }: PageProps) {
               }
             }
           });
+          
+          // If no section found above threshold, use the first visible one
+          if (!currentSection && headings.length > 0) {
+            headings.forEach((sectionId) => {
+              const element = sectionRefs.current[sectionId];
+              if (element) {
+                const rect = element.getBoundingClientRect();
+                if (rect.top >= 0 && rect.top <= windowHeight && !currentSection) {
+                  currentSection = sectionId;
+                }
+              }
+            });
+          }
+          
+          // Fallback to first heading if still no section
+          if (!currentSection && headings.length > 0) {
+            currentSection = headings[0];
+          }
 
-          setActiveSection(currentSection);
+          if (currentSection) {
+            setActiveSection(currentSection);
+          }
 
           // Calculate progress and active section for each loaded post
           loadedPosts.forEach((loadedPost, postIndex) => {
+            const postContentElement = document.querySelector(`[data-post-id="${loadedPost.id}"]`) as HTMLElement;
             const postSectionRefs = loadedPostsSectionRefs.current[loadedPost.id] || {};
-            const postSections = ['introduction', 'getting-lost', 'popular-frameworks', 'support-progress', 'how-to-apply', 'conclusion'];
             
-            let currentPostSection = 'introduction';
+            let currentPostSection = '';
             let maxPostTop = -Infinity;
             
-            postSections.forEach((sectionId) => {
+            // Get all headings from this post's refs
+            const postHeadings = Object.keys(postSectionRefs);
+            
+            // If no refs yet, find headings directly
+            if (postHeadings.length === 0 && postContentElement) {
+              const headingElements = postContentElement.querySelectorAll('h2, h3, h4');
+              headingElements.forEach((heading) => {
+                const element = heading as HTMLElement;
+                let id = element.id;
+                if (!id) {
+                  const text = element.textContent || '';
+                  id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                  element.id = id;
+                }
+                if (!loadedPostsSectionRefs.current[loadedPost.id]) {
+                  loadedPostsSectionRefs.current[loadedPost.id] = {};
+                }
+                loadedPostsSectionRefs.current[loadedPost.id][id] = element;
+                postHeadings.push(id);
+              });
+            }
+            
+            postHeadings.forEach((sectionId) => {
               // Try ref first
               let element = postSectionRefs[sectionId];
               
@@ -258,6 +333,9 @@ export default function SinglePostPage({ params }: PageProps) {
               if (!element && postContentElement) {
                 element = postContentElement.querySelector(`#${sectionId}`) as HTMLElement;
                 if (element) {
+                  if (!loadedPostsSectionRefs.current[loadedPost.id]) {
+                    loadedPostsSectionRefs.current[loadedPost.id] = {};
+                  }
                   loadedPostsSectionRefs.current[loadedPost.id][sectionId] = element;
                 }
               }
@@ -272,13 +350,17 @@ export default function SinglePostPage({ params }: PageProps) {
               }
             });
             
+            // Fallback to first heading if no section found
+            if (!currentPostSection && postHeadings.length > 0) {
+              currentPostSection = postHeadings[0];
+            }
+            
             setLoadedPostsActiveSection(prev => ({
               ...prev,
               [loadedPost.id]: currentPostSection
             }));
 
             // Calculate progress for this loaded post (based on JS sample)
-            const postContentElement = document.querySelector(`[data-post-id="${loadedPost.id}"]`) as HTMLElement;
             if (postContentElement) {
               const contentRect = postContentElement.getBoundingClientRect();
               const contentHeight = postContentElement.offsetHeight;
@@ -428,15 +510,7 @@ export default function SinglePostPage({ params }: PageProps) {
     }
   };
 
-  // Table of Contents - only show if content exists
-  const tocItems = post.content ? [
-    { id: 'introduction', label: 'Introduction' },
-    { id: 'getting-lost', label: 'Getting Lost in "Busy Work"' },
-    { id: 'popular-frameworks', label: 'Popular Frameworks' },
-    { id: 'support-progress', label: 'Support Real Progress' },
-    { id: 'how-to-apply', label: 'How to Apply' },
-    { id: 'conclusion', label: 'Conclusion' }
-  ] : [];
+  // TOC items are now dynamically generated from content headings
 
   const currentIndex = posts.findIndex(p => p.id === post.id);
 
@@ -552,6 +626,9 @@ export default function SinglePostPage({ params }: PageProps) {
                               ? 'font-bold text-primary border-l-2 border-primary -ml-[17px] pl-4'
                               : 'text-gray-500 hover:text-primary'
                           }`}
+                          style={{ 
+                            paddingLeft: item.level > 2 ? `${(item.level - 2) * 12 + 16}px` : undefined 
+                          }}
                         >
                           {item.label}
                         </button>

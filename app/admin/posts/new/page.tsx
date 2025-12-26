@@ -183,7 +183,7 @@ export default function AdminNewPostPage() {
   // Auto-generate slug from title
   useEffect(() => {
     if (title) {
-      const generatedSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^-+|-+$/g, '')
+      const generatedSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
       setSlug(generatedSlug)
     }
   }, [title])
@@ -203,7 +203,7 @@ export default function AdminNewPostPage() {
     }
 
     // Auto-generate slug if empty
-    const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^-+|-+$/g, '')
+    const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
     
     // Generate ID from slug or title
     const postId = finalSlug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
