@@ -121,6 +121,56 @@ export default function SinglePostPage({ params }: PageProps) {
     }, 100);
   }, [id]);
 
+  // Initialize section refs from content HTML after render
+  useEffect(() => {
+    if (!contentRef.current) return;
+
+    const sections = [
+      'introduction',
+      'getting-lost',
+      'popular-frameworks',
+      'support-progress',
+      'how-to-apply',
+      'conclusion'
+    ];
+
+    // Find and assign refs for each section
+    sections.forEach((sectionId) => {
+      const element = contentRef.current?.querySelector(`#${sectionId}`) as HTMLElement;
+      if (element) {
+        sectionRefs.current[sectionId] = element;
+      }
+    });
+  }, [post, previewHtml]);
+
+  // Initialize section refs for loaded posts
+  useEffect(() => {
+    loadedPosts.forEach((loadedPost) => {
+      const postContentElement = document.querySelector(`[data-post-id="${loadedPost.id}"]`) as HTMLElement;
+      if (postContentElement) {
+        const sections = [
+          'introduction',
+          'getting-lost',
+          'popular-frameworks',
+          'support-progress',
+          'how-to-apply',
+          'conclusion'
+        ];
+
+        if (!loadedPostsSectionRefs.current[loadedPost.id]) {
+          loadedPostsSectionRefs.current[loadedPost.id] = {};
+        }
+
+        sections.forEach((sectionId) => {
+          const element = postContentElement.querySelector(`#${sectionId}`) as HTMLElement;
+          if (element) {
+            loadedPostsSectionRefs.current[loadedPost.id][sectionId] = element;
+          }
+        });
+      }
+    });
+  }, [loadedPosts]);
+
   useEffect(() => {
     let ticking = false;
     
@@ -154,7 +204,7 @@ export default function SinglePostPage({ params }: PageProps) {
             setReadingProgress(Math.min(100, Math.max(0, progress)));
           }
 
-          // Find active section
+          // Find active section - try refs first, then querySelector as fallback
           const sections = [
             'introduction',
             'getting-lost',
@@ -165,12 +215,26 @@ export default function SinglePostPage({ params }: PageProps) {
           ];
 
           let currentSection = 'introduction';
+          let maxTop = -Infinity;
           
           sections.forEach((sectionId) => {
-            const element = sectionRefs.current[sectionId];
+            // Try ref first
+            let element = sectionRefs.current[sectionId];
+            
+            // If ref not found, try querySelector as fallback
+            if (!element && mainContent) {
+              element = mainContent.querySelector(`#${sectionId}`) as HTMLElement;
+              if (element) {
+                sectionRefs.current[sectionId] = element;
+              }
+            }
+            
             if (element) {
               const rect = element.getBoundingClientRect();
-              if (rect.top <= 200) {
+              // Section is active if it's above 200px from top of viewport
+              // We want the section that's closest to but above 200px
+              if (rect.top <= 200 && rect.top > maxTop) {
+                maxTop = rect.top;
                 currentSection = sectionId;
               }
             }
@@ -184,11 +248,25 @@ export default function SinglePostPage({ params }: PageProps) {
             const postSections = ['introduction', 'getting-lost', 'popular-frameworks', 'support-progress', 'how-to-apply', 'conclusion'];
             
             let currentPostSection = 'introduction';
+            let maxPostTop = -Infinity;
+            
             postSections.forEach((sectionId) => {
-              const element = postSectionRefs[sectionId];
+              // Try ref first
+              let element = postSectionRefs[sectionId];
+              
+              // If ref not found, try querySelector as fallback
+              if (!element && postContentElement) {
+                element = postContentElement.querySelector(`#${sectionId}`) as HTMLElement;
+                if (element) {
+                  loadedPostsSectionRefs.current[loadedPost.id][sectionId] = element;
+                }
+              }
+              
               if (element) {
                 const rect = element.getBoundingClientRect();
-                if (rect.top <= 200) {
+                // Section is active if it's above 200px from top of viewport
+                if (rect.top <= 200 && rect.top > maxPostTop) {
+                  maxPostTop = rect.top;
                   currentPostSection = sectionId;
                 }
               }
