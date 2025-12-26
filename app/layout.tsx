@@ -72,7 +72,7 @@ export default function RootLayout({
         <meta property="og:url" content="https://zerra.blog" />
         <meta property="og:site_name" content="Zerra Blog" />
         <meta property="og:type" content="website" />
-        <meta name="google-site-verification" content="604730c85a229469" />
+        <meta name="google-site-verification" content="google604730c85a229469" />
         <link rel="icon" type="image/webp" href="/assets/favicon.webp" />
         <link rel="icon" type="image/webp" sizes="185x185" href="/assets/favicon-185x185.webp" />
         <link rel="icon" type="image/webp" sizes="300x300" href="/assets/favicon-300x300.webp" />
