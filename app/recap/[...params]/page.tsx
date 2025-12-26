@@ -651,55 +651,120 @@ export default function RecapPostPage({ params }: PageProps) {
 
   // Share functions
   const handleShare = async (platform: 'facebook' | 'twitter' | 'copy') => {
-    if (!post) return;
+    if (!post || typeof window === 'undefined') {
+      console.warn('Cannot share: post or window not available');
+      return;
+    }
     
-    const postUrl = typeof window !== 'undefined' ? window.location.href : '';
-    const shareText = `${post.title} - ${post.excerpt}`;
+    // Get post URL - use getPostUrl if available, otherwise use current URL
+    let postUrl = '';
+    try {
+      postUrl = getPostUrl(post);
+      // If getPostUrl returns relative path, make it absolute
+      if (postUrl.startsWith('/')) {
+        postUrl = `${window.location.origin}${postUrl}`;
+      }
+    } catch (err) {
+      // Fallback to current URL
+      postUrl = window.location.href;
+    }
+    
+    const shareText = `${post.title}${post.excerpt ? ` - ${post.excerpt}` : ''}`;
     
     if (platform === 'facebook') {
-      const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
-      window.open(facebookUrl, '_blank', 'width=600,height=400');
+      try {
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
+        window.open(facebookUrl, '_blank', 'width=600,height=400,scrollbars=yes,resizable=yes');
+      } catch (err) {
+        console.error('Error sharing to Facebook:', err);
+        alert('Không thể mở Facebook share. Vui lòng thử lại.');
+      }
     } else if (platform === 'twitter') {
-      const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(shareText)}`;
-      window.open(twitterUrl, '_blank', 'width=600,height=400');
+      try {
+        const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(shareText)}`;
+        window.open(twitterUrl, '_blank', 'width=600,height=400,scrollbars=yes,resizable=yes');
+      } catch (err) {
+        console.error('Error sharing to Twitter:', err);
+        alert('Không thể mở Twitter share. Vui lòng thử lại.');
+      }
     } else if (platform === 'copy') {
       try {
         // Try Web Share API first (mobile)
         if (navigator.share) {
-          await navigator.share({
-            title: post.title,
-            text: post.excerpt,
-            url: postUrl,
-          });
-        } else {
-          // Fallback to clipboard API
-          await navigator.clipboard.writeText(postUrl);
-          // Show simple notification
-          const notification = document.createElement('div');
-          notification.textContent = 'Đã sao chép link vào clipboard!';
-          notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #3b82f6;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 9999;
-            font-size: 14px;
-            animation: slideIn 0.3s ease-out;
-          `;
-          document.body.appendChild(notification);
-          setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease-out';
-            setTimeout(() => notification.remove(), 300);
-          }, 2000);
+          try {
+            await navigator.share({
+              title: post.title,
+              text: post.excerpt || '',
+              url: postUrl,
+            });
+            return; // Success, exit early
+          } catch (shareErr: any) {
+            // User cancelled or error, fall through to clipboard
+            if (shareErr.name !== 'AbortError') {
+              console.log('Web Share API failed, falling back to clipboard:', shareErr);
+            } else {
+              return; // User cancelled, don't show notification
+            }
+          }
         }
+        
+        // Fallback to clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(postUrl);
+        } else {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = postUrl;
+          textArea.style.position = 'fixed';
+          textArea.style.opacity = '0';
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        }
+        
+        // Show notification
+        const notification = document.createElement('div');
+        notification.textContent = 'Đã sao chép link vào clipboard!';
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #3b82f6;
+          color: white;
+          padding: 12px 24px;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          z-index: 9999;
+          font-size: 14px;
+          font-weight: 500;
+          animation: slideIn 0.3s ease-out;
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+          notification.style.animation = 'slideOut 0.3s ease-out';
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.remove();
+            }
+          }, 300);
+        }, 2000);
       } catch (err) {
-        console.error('Error sharing:', err);
-        // Fallback: show alert
-        alert('Đã sao chép link vào clipboard!');
+        console.error('Error copying to clipboard:', err);
+        // Last resort fallback
+        const textArea = document.createElement('textarea');
+        textArea.value = postUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          alert('Đã sao chép link vào clipboard!');
+        } catch (e) {
+          alert(`Link bài viết:\n${postUrl}\n\nVui lòng sao chép thủ công.`);
+        }
+        document.body.removeChild(textArea);
       }
     }
   };
@@ -908,10 +973,6 @@ export default function RecapPostPage({ params }: PageProps) {
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <span className="material-icons-outlined text-sm">visibility</span>
                   <span>132</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span className="material-icons-outlined text-sm">comment</span>
-                  <span>0</span>
                 </div>
               </div>
 
