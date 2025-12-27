@@ -19,6 +19,7 @@ const Header: React.FC = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [mobileExpandedItems, setMobileExpandedItems] = useState<Set<string>>(new Set());
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [schemeMode, setSchemeMode] = useState<'light' | 'dark' | 'auto'>('auto');
     const lastScrollYRef = React.useRef(0);
     const tickingRef = React.useRef(false);
     const hasFetchedCategories = React.useRef(false);
@@ -57,31 +58,124 @@ const Header: React.FC = () => {
         }
     }, []); // Empty dependency array - only run once on mount
     
-    // Load dark mode preference from localStorage on mount
+    // Initialize dark mode based on saved preference or system
     useEffect(() => {
-        const savedTheme = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+        const updateScheme = (scheme: 'light' | 'dark' | 'auto', saveToStorage: boolean) => {
+            let shouldBeDark = false;
+            
+            if (scheme === 'dark') {
+                shouldBeDark = true;
+            } else if (scheme === 'light') {
+                shouldBeDark = false;
+            } else { // 'auto' - follow system preference
+                shouldBeDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            }
+            
+            setIsDarkMode(shouldBeDark);
+            
+            // Update body data-scheme attribute (for compatibility with reference HTML)
+            if (typeof document !== 'undefined') {
+                document.body.setAttribute('data-scheme', scheme);
+                
+                // Update html class for Tailwind dark mode
+                if (shouldBeDark) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                
+                // Save to storage if requested
+                if (saveToStorage && typeof localStorage !== 'undefined') {
+                    try {
+                        localStorage.setItem('theme', scheme);
+                        localStorage.setItem('_color_schema', scheme); // Also save with reference HTML key
+                    } catch (e) {
+                        // localStorage might not be available
+                    }
+                }
+            }
+        };
         
+        // Initialize on mount
+        let savedScheme: string | null = null;
+        try {
+            savedScheme = localStorage.getItem('theme') || localStorage.getItem('_color_schema');
+        } catch (e) {
+            // localStorage might not be available
+        }
+        
+        // Support 'auto', 'dark', 'light' modes
+        let initialScheme: 'light' | 'dark' | 'auto' = 'auto';
+        if (savedScheme === 'dark' || savedScheme === 'light') {
+            initialScheme = savedScheme;
+        }
+        
+        setSchemeMode(initialScheme);
+        updateScheme(initialScheme, false);
+        
+        // Listen to system preference changes when in 'auto' mode
+        if (typeof window !== 'undefined') {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            const handleChange = () => {
+                const currentScheme = document.body.getAttribute('data-scheme') || 'auto';
+                if (currentScheme === 'auto') {
+                    updateScheme('auto', false);
+                }
+            };
+            
+            // Modern browsers
+            if (mediaQuery.addEventListener) {
+                mediaQuery.addEventListener('change', handleChange);
+                return () => mediaQuery.removeEventListener('change', handleChange);
+            } else {
+                // Fallback for older browsers
+                mediaQuery.addListener(handleChange);
+                return () => mediaQuery.removeListener(handleChange);
+            }
+        }
+    }, []); // Empty dependency array - only run once on mount
+    
+    // Toggle dark mode (matches reference HTML behavior)
+    const toggleDarkMode = () => {
+        if (typeof document === 'undefined') return;
+        
+        let newScheme: 'light' | 'dark' | 'auto' = 'auto';
+        const currentScheme = document.body.getAttribute('data-scheme') || schemeMode;
+        
+        if (currentScheme === 'dark') {
+            // If dark, switch to light
+            newScheme = 'light';
+        } else if (currentScheme === 'light') {
+            // If light, switch to dark
+            newScheme = 'dark';
+        } else {
+            // If auto, check system preference and switch to opposite
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            newScheme = systemDark ? 'light' : 'dark';
+        }
+        
+        setSchemeMode(newScheme);
+        const shouldBeDark = newScheme === 'dark';
         setIsDarkMode(shouldBeDark);
+        
+        // Update body data-scheme attribute (for compatibility with reference HTML)
+        document.body.setAttribute('data-scheme', newScheme);
+        
+        // Update html class for Tailwind dark mode
         if (shouldBeDark) {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
         }
-    }, []);
-    
-    // Toggle dark mode
-    const toggleDarkMode = () => {
-        const newDarkMode = !isDarkMode;
-        setIsDarkMode(newDarkMode);
         
-        if (newDarkMode) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
+        // Save to localStorage
+        if (typeof localStorage !== 'undefined') {
+            try {
+                localStorage.setItem('theme', newScheme);
+                localStorage.setItem('_color_schema', newScheme); // Also save with reference HTML key
+            } catch (e) {
+                // localStorage might not be available
+            }
         }
     };
     
@@ -175,7 +269,7 @@ const Header: React.FC = () => {
             }`}>
                 <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
                     scrolled
-                        ? 'bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-md rounded-2xl'
+                        ? 'bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-md rounded-2xl'
                         : 'bg-transparent'
                 }`}>
                 <div className="flex justify-between items-center h-20">
@@ -203,15 +297,15 @@ const Header: React.FC = () => {
                             return (
                              <div key={item} className="relative group px-4 py-2">
                                     {item === 'Home' ? (
-                                        <Link href="/" className="text-sm font-semibold text-gray-600 hover:text-primary transition-colors">
+                                        <Link href="/" className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors">
                                             {item}
                                         </Link>
                                     ) : item === 'About' ? (
-                                        <Link href="/about" className="text-sm font-semibold text-gray-600 hover:text-primary transition-colors">
+                                        <Link href="/about" className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors">
                                             {item}
                                         </Link>
                                     ) : (
-                                <button className="text-sm font-semibold text-gray-600 hover:text-primary flex items-center gap-1 transition-colors bg-transparent border-none cursor-pointer">
+                                <button className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary flex items-center gap-1 transition-colors bg-transparent border-none cursor-pointer">
                                     {item}
                                             {hasSubmenu && (
                                     <span className="material-icons-outlined text-[16px] transition-transform group-hover:rotate-180">expand_more</span>
@@ -222,16 +316,16 @@ const Header: React.FC = () => {
                                     {/* Mega Menu for Travel - Using Areas */}
                                     {item === 'Travel' && (
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 w-[800px] pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
-                                        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden grid grid-cols-12">
+                                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden grid grid-cols-12">
                                                 {/* Travel Areas List */}
-                                            <div className="col-span-6 p-8 bg-white">
+                                            <div className="col-span-6 p-8 bg-white dark:bg-gray-800">
                                                     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                                                         {/* Group areas by region */}
                                                         {Array.from(new Set(areas.map(a => a.region))).map(region => {
                                                             const regionAreas = areas.filter(a => a.region === region);
                                                             return (
                                                                 <div key={region}>
-                                                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                                                                    <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">
                                                                         {region}
                                                                     </div>
                                                                     {regionAreas.map((area, areaIndex) => {
@@ -242,10 +336,10 @@ const Header: React.FC = () => {
                                                                             <div key={area.id} className="mb-4">
                                                                                 <button
                                                                                     onClick={() => toggleArea(area.id)}
-                                                                                    className="w-full flex items-center justify-between text-sm font-bold text-gray-900 mb-2 hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                                                                                    className="w-full flex items-center justify-between text-sm font-bold text-gray-900 dark:text-gray-100 mb-2 hover:text-primary dark:hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
                                                                                 >
                                                                                     <div className="flex items-center gap-2">
-                                                                                        <span className="material-icons-outlined text-base text-gray-400">{area.icon}</span>
+                                                                                        <span className="material-icons-outlined text-base text-gray-400 dark:text-gray-500">{area.icon}</span>
                                                                                         <span>{area.name}</span>
                                                                                     </div>
                                                                                     <span className={`material-icons-outlined text-[16px] transition-transform duration-300 ease-in-out ${expandedAreas.has(area.id) ? 'rotate-180' : ''}`}>
@@ -264,7 +358,7 @@ const Header: React.FC = () => {
                                                                                             <Link 
                                                                                                 key={country.id}
                                                                                                 href={`/categories?country=${country.id}`} 
-                                                                                                className={`flex gap-4 group/item hover:bg-gray-50 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
+                                                                                                className={`flex gap-4 group/item hover:bg-gray-50 dark:hover:bg-gray-700 -mx-4 px-4 py-2 rounded-xl transition-all duration-300 ${
                                                                                                     expandedAreas.has(area.id) 
                                                                                                         ? 'opacity-100 translate-y-0' 
                                                                                                         : 'opacity-0 -translate-y-2 delay-0'
@@ -272,11 +366,11 @@ const Header: React.FC = () => {
                                                                                                 style={{ transitionDelay: expandedAreas.has(area.id) ? `${(countryIndex + 1) * 75}ms` : '0ms' }}
                                                                                             >
                                                             <div className="mt-1">
-                                                                                                    <span className="material-icons-outlined text-gray-400 group-hover/item:text-primary transition-colors">{country.icon}</span>
+                                                                                                    <span className="material-icons-outlined text-gray-400 dark:text-gray-500 group-hover/item:text-primary dark:group-hover/item:text-primary transition-colors">{country.icon}</span>
                                                             </div>
                                                             <div>
-                                                                                                    <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-1">{country.name}</h4>
-                                                                                                    <p className="text-xs text-gray-500 leading-relaxed max-w-xs">{country.description}</p>
+                                                                                                    <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 group-hover/item:text-primary dark:group-hover/item:text-primary transition-colors mb-1">{country.name}</h4>
+                                                                                                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">{country.description}</p>
                                                             </div>
                                                         </Link>
                                                     ))}
@@ -292,16 +386,16 @@ const Header: React.FC = () => {
                                             </div>
                                             
                                             {/* Spotlight Section */}
-                                            <div className="col-span-6 p-8 bg-gray-50/50">
-                                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Spotlight</h3>
+                                            <div className="col-span-6 p-8 bg-gray-50/50 dark:bg-gray-700/50">
+                                                <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-6">Spotlight</h3>
                                                     <div className="space-y-5 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                                                     {spotlightPosts.map(post => (
                                                         <Link href={getPostUrl(post)} key={post.id} className="flex gap-4 group/post">
                                                             <div className="flex-1">
-                                                                <h4 className="text-sm font-bold text-gray-900 group-hover/post:text-primary transition-colors leading-tight mb-2">
+                                                                <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 group-hover/post:text-primary dark:group-hover/post:text-primary transition-colors leading-tight mb-2">
                                                                     {post.title}
                                                                 </h4>
-                                                                <p className="text-xs text-gray-400">{post.date}</p>
+                                                                <p className="text-xs text-gray-400 dark:text-gray-500">{post.date}</p>
                                                             </div>
                                                             <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden relative">
                                                                 <img src={post.thumbnail || post.image} alt={post.title} className="w-full h-full object-cover group-hover/post:scale-110 transition-transform duration-500" />
@@ -317,13 +411,13 @@ const Header: React.FC = () => {
                                     {/* Simple Dropdown Menu for Categories - Centered on screen */}
                                     {item === 'Categories' && (
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
-                                            <div className="bg-white rounded-xl shadow-lg border border-gray-100 w-[320px] max-h-[500px] overflow-y-auto custom-scrollbar py-3">
+                                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 w-[320px] max-h-[500px] overflow-y-auto custom-scrollbar py-3">
                                                 {categoriesLoading ? (
-                                                    <div className="px-6 py-4 text-center text-sm text-gray-500">
+                                                    <div className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                                                         Đang tải...
                                                     </div>
                                                 ) : postCategories.length === 0 ? (
-                                                    <div className="px-6 py-4 text-center text-sm text-gray-500">
+                                                    <div className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                                                         Chưa có danh mục nào
                                                     </div>
                                                 ) : (
@@ -331,14 +425,14 @@ const Header: React.FC = () => {
                                                         <Link 
                                                             href={`/${cat.id}`} 
                                                             key={cat.id}
-                                                            className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50 transition-colors group/item"
+                                                            className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group/item"
                                                         >
-                                                            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-50 group-hover/item:bg-primary/10 transition-colors">
-                                                                <span className="material-icons-outlined text-gray-500 group-hover/item:text-primary transition-colors text-[20px]">{cat.icon}</span>
+                                                            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-700 group-hover/item:bg-primary/10 dark:group-hover/item:bg-primary/20 transition-colors">
+                                                                <span className="material-icons-outlined text-gray-500 dark:text-gray-400 group-hover/item:text-primary dark:group-hover/item:text-primary transition-colors text-[20px]">{cat.icon}</span>
                                                             </div>
                                                             <div className="flex-1">
-                                                                <h4 className="text-sm font-bold text-gray-900 group-hover/item:text-primary transition-colors mb-0.5">{cat.name}</h4>
-                                                                <p className="text-xs text-gray-500 leading-relaxed line-clamp-1">{cat.description}</p>
+                                                                <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 group-hover/item:text-primary dark:group-hover/item:text-primary transition-colors mb-0.5">{cat.name}</h4>
+                                                                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-1">{cat.description}</p>
                                                             </div>
                                                         </Link>
                                                     ))
@@ -355,7 +449,7 @@ const Header: React.FC = () => {
                         {/* Desktop actions */}
                         <button 
                             onClick={toggleDarkMode}
-                            className="hidden md:block p-2 text-gray-400 hover:text-primary transition-colors"
+                            className="hidden md:block p-2 text-gray-400 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors"
                             aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
                         >
                             <span className="material-icons-outlined text-xl">
@@ -370,7 +464,7 @@ const Header: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setIsMobileMenuOpen(true)}
-                            className="md:hidden p-2 text-gray-700 hover:text-primary transition-colors"
+                            className="md:hidden p-2 text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors"
                             aria-label="Open menu"
                         >
                             <span className="material-icons-outlined text-2xl">menu</span>
@@ -389,13 +483,13 @@ const Header: React.FC = () => {
 
             {/* Mobile Fullscreen Sidebar (absolute) */}
             <div
-                className={`absolute inset-0 h-screen w-full z-[9999] bg-white transform transition-transform duration-300 ease-in-out md:hidden ${
+                className={`absolute inset-0 h-screen w-full z-[9999] bg-white dark:bg-gray-800 transform transition-transform duration-300 ease-in-out md:hidden ${
                     isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
                 <div className="flex h-full flex-col">
                     {/* Header */}
-                    <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-200 px-4 py-4">
+                    <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-4">
                         <div className="flex items-center">
                             <Image
                                 src="/assets/zerra.png"
@@ -408,7 +502,7 @@ const Header: React.FC = () => {
                         </div>
                         <button
                             type="button"
-                            className="p-2 text-gray-700 hover:text-primary transition-colors"
+                            className="p-2 text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors"
                             aria-label="Close menu"
                             onClick={closeMobileMenu}
                         >
@@ -426,7 +520,7 @@ const Header: React.FC = () => {
                                 (item === 'About' && pathname === '/about');
 
                             return (
-                                <div key={item} className="border-b border-gray-200">
+                                <div key={item} className="border-b border-gray-200 dark:border-gray-700">
                                     {/* Simple links (Home / About) */}
                                     {!hasSubmenu ? (
                                         <Link
@@ -439,7 +533,7 @@ const Header: React.FC = () => {
                                             className={`flex w-full items-center px-6 py-4 text-base font-semibold transition-colors ${
                                                 isActive
                                                     ? 'text-primary'
-                                                    : 'text-gray-800 hover:text-primary'
+                                                    : 'text-gray-800 dark:text-gray-200 hover:text-primary dark:hover:text-primary'
                                             }`}
                                         >
                                             {item}
@@ -450,7 +544,7 @@ const Header: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => toggleMobileItem(item)}
-                                                className="flex w-full items-center justify-between px-6 py-4 text-base font-semibold text-gray-800 hover:text-primary transition-colors"
+                                                className="flex w-full items-center justify-between px-6 py-4 text-base font-semibold text-gray-800 dark:text-gray-200 hover:text-primary dark:hover:text-primary transition-colors"
                                             >
                                                 <span>{item}</span>
                                                 <span
@@ -464,14 +558,14 @@ const Header: React.FC = () => {
 
                                             {/* Travel simple submenu (areas -> countries -> Categories page with cities) */}
                                             {item === 'Travel' && isExpanded && (
-                                                <div className="bg-gray-50 overflow-hidden">
+                                                <div className="bg-gray-50 dark:bg-gray-700/50 overflow-hidden">
                                                     <div className="px-6 py-3 space-y-4 animate-slide-in-left">
                                                         {/* Group areas by region */}
                                                         {Array.from(new Set(areas.map(a => a.region))).map(region => {
                                                             const regionAreas = areas.filter(a => a.region === region);
                                                             return (
                                                                 <div key={region}>
-                                                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">
+                                                                    <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 px-2">
                                                                         {region}
                                                                     </div>
                                                                     {regionAreas.map(area => {
@@ -481,8 +575,8 @@ const Header: React.FC = () => {
                                                                         return (
                                                                             <div key={area.id} className="mb-3">
                                                                                 <div className="flex items-center gap-2 px-2 mb-1">
-                                                                                    <span className="material-icons-outlined text-sm text-gray-400">{area.icon}</span>
-                                                                                    <span className="text-xs font-semibold text-gray-600">{area.name}</span>
+                                                                                    <span className="material-icons-outlined text-sm text-gray-400 dark:text-gray-500">{area.icon}</span>
+                                                                                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{area.name}</span>
                                                                                 </div>
                                                                                 <div className="pl-6 space-y-1">
                                                                                     {areaCountries.map(country => (
@@ -490,9 +584,9 @@ const Header: React.FC = () => {
                                                                                             key={country.id}
                                                                                             href={`/categories?country=${country.id}`}
                                                                                             onClick={closeMobileMenu}
-                                                                                            className="flex items-center gap-3 text-sm text-gray-700 hover:text-primary transition-colors"
+                                                                                            className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors"
                                                                                         >
-                                                                                            <span className="material-icons-outlined text-sm text-gray-400">
+                                                                                            <span className="material-icons-outlined text-sm text-gray-400 dark:text-gray-500">
                                                                                                 {country.icon}
                                                                                             </span>
                                                                                             <span>{country.name}</span>
@@ -511,14 +605,14 @@ const Header: React.FC = () => {
 
                                             {/* Categories submenu = list of categories */}
                                             {item === 'Categories' && isExpanded && (
-                                                <div className="bg-gray-50 overflow-hidden">
+                                                <div className="bg-gray-50 dark:bg-gray-700/50 overflow-hidden">
                                                     <div className="px-6 py-3 space-y-1 animate-slide-in-left">
                                                         {categoriesLoading ? (
-                                                            <div className="px-3 py-2.5 text-sm text-gray-500">
+                                                            <div className="px-3 py-2.5 text-sm text-gray-500 dark:text-gray-400">
                                                                 Đang tải...
                                                             </div>
                                                         ) : postCategories.length === 0 ? (
-                                                            <div className="px-3 py-2.5 text-sm text-gray-500">
+                                                            <div className="px-3 py-2.5 text-sm text-gray-500 dark:text-gray-400">
                                                                 Chưa có danh mục nào
                                                             </div>
                                                         ) : (
@@ -527,16 +621,16 @@ const Header: React.FC = () => {
                                                                     key={cat.id}
                                                                     href={`/${cat.id}`}
                                                                     onClick={closeMobileMenu}
-                                                                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white transition-colors"
+                                                                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white dark:hover:bg-gray-600 transition-colors"
                                                                 >
-                                                                    <span className="material-icons-outlined text-gray-500 text-lg">
+                                                                    <span className="material-icons-outlined text-gray-500 dark:text-gray-400 text-lg">
                                                                         {cat.icon}
                                                                     </span>
                                                                     <div>
-                                                                        <div className="text-sm font-semibold text-gray-900">
+                                                                        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                                                                             {cat.name}
                                                                         </div>
-                                                                        <div className="text-xs text-gray-500 line-clamp-1">
+                                                                        <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
                                                                             {cat.description}
                                                                         </div>
                                                                     </div>
@@ -554,7 +648,7 @@ const Header: React.FC = () => {
                     </div>
 
                     {/* Footer (fixed bottom) */}
-                    <div className="flex flex-shrink-0 items-center justify-between border-t border-gray-200 px-4 py-4">
+                    <div className="flex flex-shrink-0 items-center justify-between border-t border-gray-200 dark:border-gray-700 px-4 py-4">
                         <Link
                             href="/contact"
                             onClick={closeMobileMenu}

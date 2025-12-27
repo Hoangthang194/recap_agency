@@ -240,8 +240,6 @@ export function usePosts(initialOptions?: UsePostsOptions): UsePostsReturn {
       
       if (result.data) {
         const transformed = transformPost(result.data)
-        console.log('✅ Post transformed:', transformed.title)
-        console.log('✅ Post content length:', transformed.content?.length || 0)
         setPost(transformed)
         return transformed
       }
@@ -266,12 +264,7 @@ export function usePosts(initialOptions?: UsePostsOptions): UsePostsReturn {
       // Encode slug for URL (handle special characters)
       const encodedSlug = encodeURIComponent(slug)
       const url = `/api/posts/slug/${encodedSlug}`
-      
-      console.log('🔍 getPostBySlug:', {
-        originalSlug: slug,
-        encodedSlug,
-        url
-      })
+    
       
       const response = await fetch(url, {
         cache: 'no-store', // Prevent caching issues
@@ -290,11 +283,6 @@ export function usePosts(initialOptions?: UsePostsOptions): UsePostsReturn {
       
       if (result.data) {
         const transformed = transformPost(result.data)
-        console.log('✅ Post transformed:', {
-          title: transformed.title,
-          slug: transformed.slug,
-          id: transformed.id
-        })
         setPost(transformed)
         return transformed
       }

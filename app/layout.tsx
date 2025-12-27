@@ -77,7 +77,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/assets/zerra.png" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
       </head>
-      <body className={`${inter.variable} ${bricolageGrotesque.variable} antialiased font-sans`}>
+      <body className={`${inter.variable} ${bricolageGrotesque.variable}  antialiased font-sans`}>
         {isAdminRoute ? (
           // Admin shell - completely separate from public header/footer
           <div className="min-h-screen flex bg-gray-100 text-gray-900">
@@ -175,7 +175,7 @@ export default function RootLayout({
           </div>
         ) : (
           // Public blog shell
-          <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900 selection:bg-blue-100 selection:text-blue-900">
+          <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 selection:bg-blue-100 dark:selection:bg-blue-900 selection:text-blue-900 dark:selection:text-blue-100 transition-colors duration-200">
             <Header />
             <main className="flex-grow">{children}</main>
             <Footer />

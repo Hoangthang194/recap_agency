@@ -13,6 +13,154 @@ interface PageProps {
   }>
 }
 
+// Component to render HTML content with script execution support
+function MainContentRenderer({ 
+  html, 
+  onRender, 
+  processHeadings = false 
+}: { 
+  html: string; 
+  onRender: (html: string, container: HTMLDivElement) => void;
+  processHeadings?: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const lastHtmlRef = useRef<string>('');
+
+  useEffect(() => {
+    if (!containerRef.current || !html || html === lastHtmlRef.current) return;
+    
+    lastHtmlRef.current = html;
+    
+    // Process content to add IDs to headings if needed
+    let processedContent = html;
+    if (processHeadings) {
+      const headingRegex = /<(h[2-4])([^>]*)>(.*?)<\/h[2-4]>/gi;
+      const processedIds = new Set<string>();
+      let idCounter = 0;
+      
+      processedContent = processedContent.replace(headingRegex, (match, tag, attrs, text) => {
+        // Extract text content (remove HTML tags using regex)
+        const textContent = text.replace(/<[^>]*>/g, '').trim();
+        
+        // Generate ID from text
+        let id = textContent
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        
+        // If ID is empty or already exists, add counter
+        if (!id) {
+          id = `heading-${idCounter++}`;
+        } else if (processedIds.has(id)) {
+          id = `${id}-${idCounter++}`;
+        }
+        
+        processedIds.add(id);
+        
+        // Check if attrs already has id
+        const hasId = /id\s*=\s*["']([^"']+)["']/i.test(attrs);
+        if (!hasId) {
+          return `<${tag}${attrs} id="${id}" data-heading-id="${id}">${text}</${tag}>`;
+        } else {
+          // Extract existing ID and use it
+          const existingIdMatch = attrs.match(/id\s*=\s*["']([^"']+)["']/i);
+          const existingId = existingIdMatch ? existingIdMatch[1] : id;
+          return `<${tag}${attrs} data-heading-id="${existingId}">${text}</${tag}>`;
+        }
+      });
+    }
+    
+    // Render HTML with script execution
+    if (containerRef.current) {
+      onRender(processedContent, containerRef.current);
+    }
+  }, [html, processHeadings, onRender]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="prose prose-lg prose-blue dark:prose-invert max-w-none"
+    />
+  );
+}
+
+// Component to render loaded post HTML content with script execution support
+function LoadedPostContentRenderer({ 
+  html, 
+  postSlug,
+  onRender,
+  onRefReady
+}: { 
+  html: string; 
+  postSlug: string;
+  onRender: (html: string, container: HTMLDivElement) => void;
+  onRefReady: (el: HTMLDivElement | null) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const lastHtmlRef = useRef<string>('');
+
+  useEffect(() => {
+    if (containerRef.current) {
+      onRefReady(containerRef.current);
+    }
+  }, [onRefReady]);
+
+  useEffect(() => {
+    if (!containerRef.current || !html || html === lastHtmlRef.current) return;
+    
+    lastHtmlRef.current = html;
+    
+    // Process content to add IDs to headings
+    let processedContent = html;
+    const headingRegex = /<(h[2-4])([^>]*)>(.*?)<\/h[2-4]>/gi;
+    const processedIds = new Set<string>();
+    let idCounter = 0;
+    
+    processedContent = processedContent.replace(headingRegex, (match, tag, attrs, text) => {
+      // Extract text content (remove HTML tags using regex)
+      const textContent = text.replace(/<[^>]*>/g, '').trim();
+      
+      // Generate ID from text
+      let id = textContent
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      
+      // If ID is empty or already exists, add counter
+      if (!id) {
+        id = `heading-${idCounter++}`;
+      } else if (processedIds.has(id)) {
+        id = `${id}-${idCounter++}`;
+      }
+      
+      processedIds.add(id);
+      
+      // Check if attrs already has id
+      const hasId = /id\s*=\s*["']([^"']+)["']/i.test(attrs);
+      if (!hasId) {
+        return `<${tag}${attrs} id="${id}" data-heading-id="${id}">${text}</${tag}>`;
+      } else {
+        // Extract existing ID and use it
+        const existingIdMatch = attrs.match(/id\s*=\s*["']([^"']+)["']/i);
+        const existingId = existingIdMatch ? existingIdMatch[1] : id;
+        return `<${tag}${attrs} data-heading-id="${existingId}">${text}</${tag}>`;
+      }
+    });
+    
+    // Render HTML with script execution
+    if (containerRef.current) {
+      onRender(processedContent, containerRef.current);
+    }
+  }, [html, onRender]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="prose prose-lg prose-blue dark:prose-invert max-w-none"
+    />
+  );
+}
+
 export default function RecapPostPage({ params }: PageProps) {
   // Use React.use() to unwrap the Promise synchronously
   const { params: urlParams } = use(params);
@@ -51,15 +199,6 @@ export default function RecapPostPage({ params }: PageProps) {
     // Post slug in database is also kebab-case (e.g., "ha-long-bay-travel-guide")
     // Keep slug as kebab-case for API call
     const urlSlug = slugParts.join('-');
-    
-    console.log('🔍 Fetching post by slug:', { 
-      year, 
-      month, 
-      day, 
-      urlSlug, 
-      originalUrlSlug: slugParts.join('-'),
-      urlParams: urlParams.join('/')
-    });
     
     setSearchingPost(true);
     setHasSearched(false);
@@ -113,6 +252,7 @@ export default function RecapPostPage({ params }: PageProps) {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const loadingPostsRef = useRef<Set<string>>(new Set()); // Track posts being loaded to prevent duplicates
+  const loadedPostsContentRefs = useRef<{ [postSlug: string]: HTMLDivElement | null }>({}); // Refs for loaded posts content
 
   // Calculate reading time based on content length
   const calculateReadingTime = (element: HTMLElement | null): number => {
@@ -121,6 +261,187 @@ export default function RecapPostPage({ params }: PageProps) {
     const words = text.trim().split(/\s+/).filter(word => word.length > 0).length;
     const minutes = Math.ceil(words / 200);
     return Math.max(1, minutes);
+  };
+
+  // Function to execute scripts in HTML content
+  const executeScripts = (container: HTMLElement) => {
+    // Find all script tags in the container
+    const scripts = container.querySelectorAll('script');
+    scripts.forEach((oldScript) => {
+      // Create new script element
+      const newScript = document.createElement('script');
+      
+      // Copy attributes
+      Array.from(oldScript.attributes).forEach((attr) => {
+        newScript.setAttribute(attr.name, attr.value);
+      });
+      
+      // Copy script content
+      if (oldScript.src) {
+        newScript.src = oldScript.src;
+      } else {
+        newScript.textContent = oldScript.textContent;
+      }
+      
+      // Replace old script with new one (this triggers execution)
+      if (oldScript.parentNode) {
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      }
+    });
+  };
+
+  // Function to normalize and attach event handlers
+  const attachEventHandlers = (container: HTMLElement) => {
+    // Find all elements with event handlers that haven't been processed yet
+    const allElements = container.querySelectorAll('*:not([data-handlers-attached])');
+    
+    allElements.forEach((element) => {
+      const htmlElement = element as HTMLElement;
+      
+      // Check all possible event handler attributes (both JSX and HTML format)
+      const eventHandlerPairs = [
+        ['onClick', 'onclick'],
+        ['onChange', 'onchange'],
+        ['onSubmit', 'onsubmit'],
+        ['onMouseOver', 'onmouseover'],
+        ['onMouseOut', 'onmouseout'],
+        ['onFocus', 'onfocus'],
+        ['onBlur', 'onblur'],
+        ['onKeyDown', 'onkeydown'],
+        ['onKeyUp', 'onkeyup'],
+        ['onKeyPress', 'onkeypress'],
+        ['onLoad', 'onload'],
+        ['onError', 'onerror'],
+        ['onDoubleClick', 'ondblclick']
+      ];
+      
+      eventHandlerPairs.forEach(([jsxName, htmlName]) => {
+        // Check if element has JSX format handler
+        let handlerValue = htmlElement.getAttribute(jsxName);
+        const hasJsxHandler = !!handlerValue;
+        
+        // If no JSX handler, check HTML format
+        if (!handlerValue) {
+          handlerValue = htmlElement.getAttribute(htmlName);
+        }
+        
+        if (handlerValue) {
+          // Remove JSX format if exists
+          if (hasJsxHandler) {
+            htmlElement.removeAttribute(jsxName);
+          }
+          
+          // Process handler value - handle both string and JSX arrow function format
+          let processedValue = handlerValue.trim();
+          
+          // If it's JSX arrow function format: onClick={() => console.log("haha")}
+          // Convert to: onclick="console.log('haha')"
+          if (processedValue.startsWith('() => ') || processedValue.startsWith('()=>')) {
+            // Extract the body of the arrow function
+            const arrowMatch = processedValue.match(/\(\)\s*=>\s*(.+)/);
+            if (arrowMatch) {
+              processedValue = arrowMatch[1].trim();
+              
+              // Remove surrounding braces if present
+              if (processedValue.startsWith('{') && processedValue.endsWith('}')) {
+                processedValue = processedValue.slice(1, -1).trim();
+              }
+            }
+          }
+          // If it starts with { (JSX expression), extract content
+          else if (processedValue.startsWith('{') && processedValue.endsWith('}')) {
+            processedValue = processedValue.slice(1, -1).trim();
+          }
+          // If it's wrapped in quotes, unwrap it
+          else if (
+            (processedValue.startsWith('"') && processedValue.endsWith('"')) ||
+            (processedValue.startsWith("'") && processedValue.endsWith("'"))
+          ) {
+            processedValue = processedValue.slice(1, -1);
+          }
+          
+          // Convert double quotes to single quotes in JavaScript code to avoid escaping issues
+          // This ensures: console.log("haha") becomes console.log('haha')
+          processedValue = processedValue.replace(/"/g, "'");
+          
+          // Remove any existing inline handler first to prevent duplicate execution
+          htmlElement.removeAttribute(htmlName);
+          
+          // Use addEventListener instead of inline handlers to avoid duplicate execution
+          const eventName = htmlName.replace('on', '').toLowerCase();
+          
+          try {
+            // Create a function from the handler string and attach as event listener
+            // This is more reliable than inline handlers and prevents duplicates
+            const handlerFunction = new Function('event', processedValue);
+            htmlElement.addEventListener(eventName, handlerFunction as EventListener);
+            
+            // Mark this element as processed to avoid duplicate attachments
+            htmlElement.setAttribute('data-handlers-attached', 'true');
+          } catch (error) {
+            console.warn(`Failed to attach event handler ${htmlName}:`, error, 'Value:', processedValue);
+            // Mark as processed even on error to avoid retrying
+            htmlElement.setAttribute('data-handlers-attached', 'true');
+          }
+        }
+      });
+    });
+  };
+
+  // Function to render HTML with script execution support
+  const renderHtmlWithScripts = (html: string, container: HTMLDivElement) => {
+    if (!container) return;
+
+    // First, normalize JSX-style event handlers to HTML format
+    let normalizedHtml = html;
+    
+    // Convert JSX onClick={...} to HTML onclick="..."
+    // Pattern: onClick={() => console.log("haha")} or onClick="console.log('haha')"
+    normalizedHtml = normalizedHtml.replace(
+      /onClick\s*=\s*{\(\)\s*=>\s*([^}]+)}/g,
+      (match, body) => {
+        // Extract the function body
+        let handlerBody = body.trim();
+        // Remove surrounding braces if present
+        if (handlerBody.startsWith('{') && handlerBody.endsWith('}')) {
+          handlerBody = handlerBody.slice(1, -1).trim();
+        }
+        // Convert double quotes to single quotes to avoid HTML escaping issues
+        handlerBody = handlerBody.replace(/"/g, "'");
+        // Use double quotes wrapper (handlerBody now uses single quotes)
+        return `onclick="${handlerBody}"`;
+      }
+    );
+    
+    // Convert onClick={...} (without arrow function) to onclick="..."
+    normalizedHtml = normalizedHtml.replace(
+      /onClick\s*=\s*{([^}]+)}/g,
+      (match, body) => {
+        let handlerBody = body.trim();
+        // Convert double quotes to single quotes
+        handlerBody = handlerBody.replace(/"/g, "'");
+        return `onclick="${handlerBody}"`;
+      }
+    );
+    
+    // Convert onClick="..." to onclick="..." (already in HTML format, just lowercase)
+    normalizedHtml = normalizedHtml.replace(/onClick\s*=\s*"([^"]+)"/g, (match, value) => {
+      // Convert double quotes to single quotes in the value
+      const converted = value.replace(/"/g, "'");
+      return `onclick="${converted}"`;
+    });
+    normalizedHtml = normalizedHtml.replace(/onClick\s*=\s*'([^']+)'/g, "onclick='$1'");
+
+    // Set innerHTML
+    container.innerHTML = normalizedHtml;
+    
+    // Attach event handlers and execute scripts after a small delay
+    setTimeout(() => {
+      if (container) {
+        attachEventHandlers(container);
+        executeScripts(container);
+      }
+    }, 10);
   };
 
   // Update post when foundPost changes (support preview mode)
@@ -677,7 +998,7 @@ export default function RecapPostPage({ params }: PageProps) {
         window.open(facebookUrl, '_blank', 'width=600,height=400,scrollbars=yes,resizable=yes');
       } catch (err) {
         console.error('Error sharing to Facebook:', err);
-        alert('Không thể mở Facebook share. Vui lòng thử lại.');
+        alert('Cannot open Facebook share. Please try again.');
       }
     } else if (platform === 'twitter') {
       try {
@@ -685,7 +1006,7 @@ export default function RecapPostPage({ params }: PageProps) {
         window.open(twitterUrl, '_blank', 'width=600,height=400,scrollbars=yes,resizable=yes');
       } catch (err) {
         console.error('Error sharing to Twitter:', err);
-        alert('Không thể mở Twitter share. Vui lòng thử lại.');
+        alert('Cannot open Twitter share. Please try again.');
       }
     } else if (platform === 'copy') {
       try {
@@ -701,7 +1022,6 @@ export default function RecapPostPage({ params }: PageProps) {
           } catch (shareErr: any) {
             // User cancelled or error, fall through to clipboard
             if (shareErr.name !== 'AbortError') {
-              console.log('Web Share API failed, falling back to clipboard:', shareErr);
             } else {
               return; // User cancelled, don't show notification
             }
@@ -725,7 +1045,7 @@ export default function RecapPostPage({ params }: PageProps) {
         
         // Show notification
         const notification = document.createElement('div');
-        notification.textContent = 'Đã sao chép link vào clipboard!';
+        notification.textContent = 'Link copied to clipboard!';
         notification.style.cssText = `
           position: fixed;
           top: 20px;
@@ -760,9 +1080,9 @@ export default function RecapPostPage({ params }: PageProps) {
         textArea.select();
         try {
           document.execCommand('copy');
-          alert('Đã sao chép link vào clipboard!');
+          alert('Link copied to clipboard!');
         } catch (e) {
-          alert(`Link bài viết:\n${postUrl}\n\nVui lòng sao chép thủ công.`);
+          alert(`Post link:\n${postUrl}\n\nPlease copy manually.`);
         }
         document.body.removeChild(textArea);
       }
@@ -772,10 +1092,10 @@ export default function RecapPostPage({ params }: PageProps) {
   // Loading state - show loading while searching for post
   if (searchingPost || !hasSearched) {
     return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-          <div className="text-sm text-gray-500">Đang tải bài viết...</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">Loading post...</div>
         </div>
       </div>
     );
@@ -784,11 +1104,11 @@ export default function RecapPostPage({ params }: PageProps) {
   // 404 - only show after search is complete and no post found
   if (!foundPost && !isPreview && hasSearched) {
     return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
-          <p className="text-gray-500 mb-8">Post not found</p>
-          <Link href="/" className="text-primary hover:underline">Go back home</Link>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">404</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-8">Post not found</p>
+          <Link href="/" className="text-primary dark:text-primary hover:underline">Go back home</Link>
         </div>
       </div>
     );
@@ -797,25 +1117,25 @@ export default function RecapPostPage({ params }: PageProps) {
   // Still loading post data
   if (!post && !isPreview) {
     return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-          <div className="text-sm text-gray-500">Đang tải nội dung bài viết...</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">Loading post content...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white">
+    <div className="bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <nav className="flex mb-6 text-sm font-medium text-gray-500">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-          <span className="mx-2 text-gray-300">/</span>
-          <Link href="/categories" className="hover:text-primary transition-colors">{post.category}</Link>
-          <span className="mx-2 text-gray-300">/</span>
-          <span className="text-gray-900 truncate max-w-[200px]">{post.title}</span>
+        <nav className="flex mb-6 text-sm font-medium text-gray-500 dark:text-gray-400">
+          <Link href="/" className="hover:text-primary dark:hover:text-primary transition-colors">Home</Link>
+          <span className="mx-2 text-gray-300 dark:text-gray-600">/</span>
+          <Link href="/categories" className="hover:text-primary dark:hover:text-primary transition-colors">{post.category}</Link>
+          <span className="mx-2 text-gray-300 dark:text-gray-600">/</span>
+          <span className="text-gray-900 dark:text-gray-100 truncate max-w-[200px]">{post.title}</span>
         </nav>
 
         <header className="mb-12">
@@ -823,28 +1143,28 @@ export default function RecapPostPage({ params }: PageProps) {
             {/* Left Column - Title, Excerpt, Author */}
             <div className="lg:col-span-7 flex flex-col">
               <div className="flex gap-3 mb-6">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-primary border border-blue-100">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-primary border border-blue-100 dark:border-blue-900/50">
                   <span className="material-icons-outlined text-sm mr-1">trending_up</span> {post.category}
                 </span>
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6 leading-tight tracking-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 dark:text-gray-100 mb-6 leading-tight tracking-tight">
                 {post.title}
               </h1>
-              <p className="text-xl text-gray-500 leading-relaxed mb-8">
+              <p className="text-xl text-gray-500 dark:text-gray-400 leading-relaxed mb-8">
                 {post.excerpt}
               </p>
 
-              <div className="flex items-center justify-between border-t border-b border-gray-100 py-6 mt-auto">
+              <div className="flex items-center justify-between border-t border-b border-gray-100 dark:border-gray-700 py-6 mt-auto">
                 <div className="flex items-center gap-4">
                   <img src={post.author.avatar} alt={post.author.name} className="w-12 h-12 rounded-full object-cover" />
                   <div>
-                    <p className="font-bold text-gray-900">{post.author.name}</p>
-                    <div className="flex items-center text-xs text-gray-500 font-medium gap-3">
+                    <p className="font-bold text-gray-900 dark:text-gray-100">{post.author.name}</p>
+                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 font-medium gap-3">
                       <span>{post.date}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
+                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                   <span className="material-icons-outlined text-sm">schedule</span>
                   <span>{estimatedReadingTime} min read</span>
                 </div>
@@ -865,14 +1185,14 @@ export default function RecapPostPage({ params }: PageProps) {
           {post.content && (
             <aside className="hidden lg:block lg:col-span-3">
               <div className="sticky top-28 space-y-6">
-                <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="material-icons-outlined text-sm text-gray-400">schedule</span>
-                    <span className="text-xs font-bold text-gray-900">
+                    <span className="material-icons-outlined text-sm text-gray-400 dark:text-gray-500">schedule</span>
+                    <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
                       {estimatedReadingTime} min read
                     </span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
                     <div 
                       className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${readingProgress}%` }}
@@ -882,8 +1202,8 @@ export default function RecapPostPage({ params }: PageProps) {
 
                 {tocItems.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Contents</h4>
-                    <nav className="space-y-4 border-l border-gray-100 pl-4">
+                    <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-6">Contents</h4>
+                    <nav className="space-y-4 border-l border-gray-100 dark:border-gray-700 pl-4">
                       {tocItems.map((item) => (
                         <button
                           key={item.id}
@@ -891,7 +1211,7 @@ export default function RecapPostPage({ params }: PageProps) {
                           className={`block text-sm text-left w-full transition-colors ${
                             activeSection === item.id
                               ? 'font-bold text-primary border-l-2 border-primary -ml-[17px] pl-4'
-                              : 'text-gray-500 hover:text-primary'
+                              : 'text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary'
                           }`}
                         >
                           {item.label}
@@ -905,87 +1225,43 @@ export default function RecapPostPage({ params }: PageProps) {
           )}
 
           {/* Main Content */}
-          <div ref={contentRef} className={`col-span-1 ${post.content ? 'lg:col-span-6' : 'lg:col-span-12'} prose prose-lg prose-blue max-w-none`}>
+          <div ref={contentRef} className={`col-span-1 ${post.content ? 'lg:col-span-6' : 'lg:col-span-12'} prose prose-lg prose-blue dark:prose-invert max-w-none`}>
             {isPreview && previewHtml ? (
-              <div
-                className="prose prose-lg prose-blue max-w-none"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
+              <MainContentRenderer
+                html={previewHtml}
+                onRender={renderHtmlWithScripts}
               />
             ) : post.content ? (
-              <div
-                className="prose prose-lg prose-blue max-w-none"
-                dangerouslySetInnerHTML={{ 
-                  __html: (() => {
-                    // Process content to add IDs to all headings
-                    let processedContent = post.content;
-                    const headingRegex = /<(h[2-4])([^>]*)>(.*?)<\/h[2-4]>/gi;
-                    const processedIds = new Set<string>();
-                    let idCounter = 0;
-                    
-                    processedContent = processedContent.replace(headingRegex, (match, tag, attrs, text) => {
-                      // Extract text content (remove HTML tags using regex)
-                      const textContent = text.replace(/<[^>]*>/g, '').trim();
-                      
-                      // Generate ID from text
-                      let id = textContent
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, '-')
-                        .replace(/^-+|-+$/g, '');
-                      
-                      // If ID is empty or already exists, add counter
-                      if (!id) {
-                        id = `heading-${idCounter++}`;
-                      } else if (processedIds.has(id)) {
-                        id = `${id}-${idCounter++}`;
-                      }
-                      
-                      processedIds.add(id);
-                      
-                      // Check if attrs already has id
-                      const hasId = /id\s*=\s*["']([^"']+)["']/i.test(attrs);
-                      if (!hasId) {
-                        return `<${tag}${attrs} id="${id}" data-heading-id="${id}">${text}</${tag}>`;
-                      } else {
-                        // Extract existing ID and use it
-                        const existingIdMatch = attrs.match(/id\s*=\s*["']([^"']+)["']/i);
-                        const existingId = existingIdMatch ? existingIdMatch[1] : id;
-                        return `<${tag}${attrs} data-heading-id="${existingId}">${text}</${tag}>`;
-                      }
-                    });
-                    
-                    return processedContent;
-                  })()
-                }}
+              <MainContentRenderer
+                html={post.content}
+                onRender={renderHtmlWithScripts}
+                processHeadings={true}
               />
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">Nội dung bài viết đang được cập nhật...</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">Post content is being updated...</p>
               </div>
             )}
             
             {/* Post Footer - Metadata, Share, Navigation */}
-            <div className="mt-12 pt-8 border-t border-gray-100">
+            <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-700">
               {/* Metadata */}
               <div className="flex items-center gap-4 mb-6">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-primary border border-blue-100">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-primary border border-blue-100 dark:border-blue-900/50">
                   <span className="material-icons-outlined text-sm mr-1">trending_up</span> {post.category}
                 </span>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span className="material-icons-outlined text-sm">visibility</span>
-                  <span>132</span>
-                </div>
               </div>
 
               {/* Update Date */}
-              <p className="text-sm text-gray-500 mb-8">Updated on {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">Updated on {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</p>
 
               {/* Share Section */}
               <div className="mb-8">
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">SHARE</h4>
+                <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">SHARE</h4>
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => handleShare('facebook')}
-                    className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-primary hover:border-primary transition-colors"
+                    className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary hover:border-primary dark:hover:border-primary transition-colors"
                     title="Share on Facebook"
                     aria-label="Share on Facebook"
                   >
@@ -995,7 +1271,7 @@ export default function RecapPostPage({ params }: PageProps) {
                   </button>
                   <button 
                     onClick={() => handleShare('twitter')}
-                    className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-primary hover:border-primary transition-colors"
+                    className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary hover:border-primary dark:hover:border-primary transition-colors"
                     title="Share on Twitter/X"
                     aria-label="Share on Twitter/X"
                   >
@@ -1005,7 +1281,7 @@ export default function RecapPostPage({ params }: PageProps) {
                   </button>
                   <button 
                     onClick={() => handleShare('copy')}
-                    className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-primary hover:border-primary transition-colors"
+                    className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary hover:border-primary dark:hover:border-primary transition-colors"
                     title="Copy link"
                     aria-label="Copy link to clipboard"
                   >
@@ -1061,7 +1337,7 @@ export default function RecapPostPage({ params }: PageProps) {
           <aside className="col-span-1 lg:col-span-3">
             {/* Spotlight - Not Sticky */}
             <div className="mb-8 animate-slide-in-right animate-delay-100">
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Spotlight</h4>
+              <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-6">Spotlight</h4>
               <div className="space-y-6">
                 {posts.slice(0, 4).map((spotlightPost) => (
                   <Link href={getPostUrl(spotlightPost)} key={spotlightPost.slug} className="flex gap-4 group">
@@ -1070,11 +1346,11 @@ export default function RecapPostPage({ params }: PageProps) {
                     </div>
                     <div className="flex flex-col justify-center flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="material-icons-outlined text-xs text-gray-400">{spotlightPost.category === 'Business' ? 'work' : spotlightPost.category === 'Sport' ? 'sports_soccer' : spotlightPost.category === 'Education' ? 'school' : 'computer'}</span>
+                        <span className="material-icons-outlined text-xs text-gray-400 dark:text-gray-500">{spotlightPost.category === 'Business' ? 'work' : spotlightPost.category === 'Sport' ? 'sports_soccer' : spotlightPost.category === 'Education' ? 'school' : 'computer'}</span>
                         <span className="text-[10px] font-bold text-primary uppercase">{spotlightPost.category}</span>
                       </div>
-                      <h5 className="text-xs font-bold text-gray-900 leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-1">{spotlightPost.title}</h5>
-                      <span className="text-[10px] text-gray-400">{spotlightPost.date}</span>
+                      <h5 className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-snug group-hover:text-primary dark:group-hover:text-primary transition-colors line-clamp-2 mb-1">{spotlightPost.title}</h5>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">{spotlightPost.date}</span>
                     </div>
                   </Link>
                 ))}
@@ -1119,15 +1395,15 @@ export default function RecapPostPage({ params }: PageProps) {
         </div>
 
         {/* READ NEXT Section - Full Width (Outside Grid) */}
-        <div className="mt-20 pt-10 border-t border-gray-100">
-          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-8">READ NEXT</h2>
+        <div className="mt-20 pt-10 border-t border-gray-100 dark:border-gray-700">
+          <h2 className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-8">READ NEXT</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {posts
               .filter(p => p.slug !== post.slug)
               .slice(0, 3)
               .map((relatedPost) => (
                 <Link href={getPostUrl(relatedPost)} key={relatedPost.slug} className="group">
-                  <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
                     <div className="rounded-2xl overflow-hidden aspect-[3/2] mb-4">
                       <img src={relatedPost.thumbnail || relatedPost.image} alt={relatedPost.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     </div>
@@ -1136,17 +1412,17 @@ export default function RecapPostPage({ params }: PageProps) {
                         <span className="text-[10px] font-bold text-primary uppercase">{relatedPost.category}</span>
                         {relatedPost.category !== 'Tech' && (
                           <>
-                            <span className="w-px h-3 bg-gray-200"></span>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">Tech</span>
+                            <span className="w-px h-3 bg-gray-200 dark:bg-gray-700"></span>
+                            <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Tech</span>
                           </>
                         )}
                       </div>
-                      <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 group-hover:text-primary transition-colors">{relatedPost.title}</h3>
-                      <p className="text-xs text-gray-500 line-clamp-2 mb-4">{relatedPost.excerpt}</p>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-tight mb-2 group-hover:text-primary dark:group-hover:text-primary transition-colors">{relatedPost.title}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-4">{relatedPost.excerpt}</p>
                       <div className="flex items-center gap-2">
                         <img src={relatedPost.author.avatar} className="w-5 h-5 rounded-full" alt={relatedPost.author.name} />
-                        <span className="text-[10px] font-bold text-gray-900">{relatedPost.author.name}</span>
-                        <span className="text-[10px] text-gray-400 ml-auto">{relatedPost.date}</span>
+                        <span className="text-[10px] font-bold text-gray-900 dark:text-gray-100">{relatedPost.author.name}</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-auto">{relatedPost.date}</span>
                       </div>
                     </div>
                   </div>
@@ -1161,35 +1437,35 @@ export default function RecapPostPage({ params }: PageProps) {
             <div 
               key={`loaded-post-${loadedPost.slug}-${index}`}
               data-loaded-post={loadedPost.slug}
-              className="mt-20 pt-10 border-t border-gray-100 animate-slide-up"
+              className="mt-20 pt-10 border-t border-gray-100 dark:border-gray-700 animate-slide-up"
             >
               <header className="mb-12">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
                   {/* Left Column - Title, Excerpt, Author */}
                   <div className="lg:col-span-7 flex flex-col">
                     <div className="flex gap-3 mb-6">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-primary border border-blue-100">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-primary border border-blue-100 dark:border-blue-900/50">
                         <span className="material-icons-outlined text-sm mr-1">trending_up</span> {loadedPost.category}
                       </span>
                     </div>
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6 leading-tight tracking-tight">
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 dark:text-gray-100 mb-6 leading-tight tracking-tight">
                       {loadedPost.title}
                     </h1>
-                    <p className="text-xl text-gray-500 leading-relaxed mb-8">
+                    <p className="text-xl text-gray-500 dark:text-gray-400 leading-relaxed mb-8">
                       {loadedPost.excerpt}
                     </p>
 
-                    <div className="flex items-center justify-between border-t border-b border-gray-100 py-6 mt-auto">
+                    <div className="flex items-center justify-between border-t border-b border-gray-100 dark:border-gray-700 py-6 mt-auto">
                       <div className="flex items-center gap-4">
                         <img src={loadedPost.author.avatar} alt={loadedPost.author.name} className="w-12 h-12 rounded-full object-cover" />
                         <div>
-                          <p className="font-bold text-gray-900">{loadedPost.author.name}</p>
-                          <div className="flex items-center text-xs text-gray-500 font-medium gap-3">
+                          <p className="font-bold text-gray-900 dark:text-gray-100">{loadedPost.author.name}</p>
+                          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 font-medium gap-3">
                             <span>{loadedPost.date}</span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                         <span className="material-icons-outlined text-sm">schedule</span>
                         <span>{loadedPostsReadingTime[loadedPost.slug] || estimatedReadingTime} min read</span>
                       </div>
@@ -1211,14 +1487,14 @@ export default function RecapPostPage({ params }: PageProps) {
                   <aside className="hidden lg:block lg:col-span-3">
                     <div className="sticky top-28 space-y-6">
                       {/* Reading Progress */}
-                      <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700">
                         <div className="flex items-center gap-2 mb-3">
-                          <span className="material-icons-outlined text-sm text-gray-400">schedule</span>
-                          <span className="text-xs font-bold text-gray-900">
+                          <span className="material-icons-outlined text-sm text-gray-400 dark:text-gray-500">schedule</span>
+                          <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
                             {loadedPostsReadingTime[loadedPost.slug] || estimatedReadingTime} min read
                           </span>
                         </div>
-                        <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                        <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
                           <div 
                             className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
                             style={{ width: `${loadedPostsProgress[loadedPost.slug] || 0}%` }}
@@ -1231,8 +1507,8 @@ export default function RecapPostPage({ params }: PageProps) {
                         const loadedPostTocItems = loadedPost.content ? parseHeadingsFromContent(loadedPost.content) : [];
                         return loadedPostTocItems.length > 0 ? (
                           <div>
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Contents</h4>
-                            <nav className="space-y-4 border-l border-gray-100 pl-4">
+                            <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-6">Contents</h4>
+                            <nav className="space-y-4 border-l border-gray-100 dark:border-gray-700 pl-4">
                               {loadedPostTocItems.map((item) => (
                                 <button
                                   key={item.id}
@@ -1251,7 +1527,7 @@ export default function RecapPostPage({ params }: PageProps) {
                                   className={`block text-sm text-left w-full transition-colors ${
                                     loadedPostsActiveSection[loadedPost.slug] === item.id
                                       ? 'font-bold text-primary border-l-2 border-primary -ml-[17px] pl-4'
-                                      : 'text-gray-500 hover:text-primary'
+                                      : 'text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary'
                                   }`}
                                 >
                                   {item.label}
@@ -1266,70 +1542,33 @@ export default function RecapPostPage({ params }: PageProps) {
                 )}
 
                 {/* Main Content - Full Post */}
-                <div data-post-slug={loadedPost.slug} className={`col-span-1 ${loadedPost.content ? 'lg:col-span-6' : 'lg:col-span-12'} prose prose-lg prose-blue max-w-none`}>
+                <div data-post-slug={loadedPost.slug} className={`col-span-1 ${loadedPost.content ? 'lg:col-span-6' : 'lg:col-span-12'} prose prose-lg prose-blue dark:prose-invert max-w-none`}>
                   {loadedPost.content ? (
-                    <div
-                      className="prose prose-lg prose-blue max-w-none"
-                      dangerouslySetInnerHTML={{ 
-                        __html: (() => {
-                          // Process content to add IDs to all headings
-                          let processedContent = loadedPost.content;
-                          const headingRegex = /<(h[2-4])([^>]*)>(.*?)<\/h[2-4]>/gi;
-                          const processedIds = new Set<string>();
-                          let idCounter = 0;
-                          
-                          processedContent = processedContent.replace(headingRegex, (match, tag, attrs, text) => {
-                            // Extract text content (remove HTML tags using regex)
-                            const textContent = text.replace(/<[^>]*>/g, '').trim();
-                            
-                            // Generate ID from text
-                            let id = textContent
-                              .toLowerCase()
-                              .replace(/[^a-z0-9]+/g, '-')
-                              .replace(/^-+|-+$/g, '');
-                            
-                            // If ID is empty or already exists, add counter
-                            if (!id) {
-                              id = `heading-${idCounter++}`;
-                            } else if (processedIds.has(id)) {
-                              id = `${id}-${idCounter++}`;
-                            }
-                            
-                            processedIds.add(id);
-                            
-                            // Check if attrs already has id
-                            const hasId = /id\s*=\s*["']([^"']+)["']/i.test(attrs);
-                            if (!hasId) {
-                              return `<${tag}${attrs} id="${id}" data-heading-id="${id}">${text}</${tag}>`;
-                            } else {
-                              // Extract existing ID and use it
-                              const existingIdMatch = attrs.match(/id\s*=\s*["']([^"']+)["']/i);
-                              const existingId = existingIdMatch ? existingIdMatch[1] : id;
-                              return `<${tag}${attrs} data-heading-id="${existingId}">${text}</${tag}>`;
-                            }
-                          });
-                          
-                          return processedContent;
-                        })()
+                    <LoadedPostContentRenderer
+                      html={loadedPost.content}
+                      postSlug={loadedPost.slug}
+                      onRender={renderHtmlWithScripts}
+                      onRefReady={(el) => {
+                        loadedPostsContentRefs.current[loadedPost.slug] = el;
                       }}
                     />
                   ) : (
                     <div className="text-center py-12">
-                      <p className="text-gray-500 text-lg">Nội dung bài viết đang được cập nhật...</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-lg">Post content is being updated...</p>
                     </div>
                   )}
                   
                   {/* Post Footer */}
-                  <div className="mt-12 pt-8 border-t border-gray-100">
+                  <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-700">
                     {/* Metadata */}
                     <div className="flex items-center gap-4 mb-6">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-primary border border-blue-100">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-primary border border-blue-100 dark:border-blue-900/50">
                         <span className="material-icons-outlined text-sm mr-1">trending_up</span> {loadedPost.category}
                       </span>
                     </div>
 
                     {/* Update Date */}
-                    <p className="text-sm text-gray-500 mb-8">Updated on {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">Updated on {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</p>
 
                     {/* Prev/Next Navigation */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -1386,7 +1625,7 @@ export default function RecapPostPage({ params }: PageProps) {
                 {/* Right Sidebar */}
                 <aside className="col-span-1 lg:col-span-3">
                   <div className="mb-8">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Spotlight</h4>
+                    <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-6">Spotlight</h4>
                     <div className="space-y-6">
                       {posts.slice(0, 4).map((spotlightPost) => (
                         <Link href={getPostUrl(spotlightPost)} key={spotlightPost.slug} className="flex gap-4 group">
@@ -1395,11 +1634,11 @@ export default function RecapPostPage({ params }: PageProps) {
                           </div>
                           <div className="flex flex-col justify-center flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="material-icons-outlined text-xs text-gray-400">{spotlightPost.category === 'Business' ? 'work' : spotlightPost.category === 'Sport' ? 'sports_soccer' : spotlightPost.category === 'Education' ? 'school' : 'computer'}</span>
+                              <span className="material-icons-outlined text-xs text-gray-400 dark:text-gray-500">{spotlightPost.category === 'Business' ? 'work' : spotlightPost.category === 'Sport' ? 'sports_soccer' : spotlightPost.category === 'Education' ? 'school' : 'computer'}</span>
                               <span className="text-[10px] font-bold text-primary uppercase">{spotlightPost.category}</span>
                             </div>
-                            <h5 className="text-xs font-bold text-gray-900 leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-1">{spotlightPost.title}</h5>
-                            <span className="text-[10px] text-gray-400">{spotlightPost.date}</span>
+                            <h5 className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-snug group-hover:text-primary dark:group-hover:text-primary transition-colors line-clamp-2 mb-1">{spotlightPost.title}</h5>
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500">{spotlightPost.date}</span>
                           </div>
                         </Link>
                       ))}
@@ -1426,7 +1665,7 @@ export default function RecapPostPage({ params }: PageProps) {
                           </>
                         )}
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-20">
-                          <span className="inline-block px-3 py-1 bg-white/10 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider rounded-full mb-4">{loadedPost.sidebarBanner.badge}</span>
+                          <span className="inline-block px-3 py-1 bg-white/10 dark:bg-white/10 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider rounded-full mb-4">{loadedPost.sidebarBanner.badge}</span>
                           <h3 className="text-2xl font-black text-white mb-2 whitespace-pre-line">{loadedPost.sidebarBanner.title}</h3>
                           <p className="text-white/70 text-xs mb-8">{loadedPost.sidebarBanner.description}</p>
                           {loadedPost.sidebarBanner.buttonLink ? (

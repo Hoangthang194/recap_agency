@@ -26,10 +26,7 @@ function AdminEditPostPageContent() {
   
   // Get postId from searchParams (query string: /admin/posts/edit?id=1)
   const postId = React.useMemo(() => {
-    console.log('=== DEBUG: Getting postId from query ===')
-    console.log('SearchParams:', searchParams?.toString())
     const id = searchParams?.get('id')
-    console.log('SearchParams.id:', id, 'type:', typeof id)
     
     if (!id) {
       console.warn('No id in searchParams')
@@ -48,7 +45,6 @@ function AdminEditPostPageContent() {
       return ''
     }
     
-    console.log('Final postId:', stringId)
     return stringId
   }, [searchParams])
 
@@ -67,6 +63,7 @@ function AdminEditPostPageContent() {
   const [slug, setSlug] = useState('')
   const [contentHtml, setContentHtml] = useState('')
   const [initialContentHtml, setInitialContentHtml] = useState<string>('') // Store initial content separately
+  const [rawHtmlFromDb, setRawHtmlFromDb] = useState<string>('') // Store raw HTML directly from DB, never modified
   const [sidebarBanner, setSidebarBanner] = useState({
     badge: '',
     title: '',
@@ -145,10 +142,12 @@ function AdminEditPostPageContent() {
         console.log('✅ Setting initialContentHtml, length:', post.content.length)
         setInitialContentHtml(post.content)
         setContentHtml(post.content) // Also set contentHtml for form submission
+        setRawHtmlFromDb(post.content) // Store raw HTML from DB for Raw HTML mode
       } else {
         console.log('⚠️ No content in post')
         setInitialContentHtml('')
         setContentHtml('')
+        setRawHtmlFromDb('')
       }
       
       if (post.date) {
@@ -616,7 +615,7 @@ function AdminEditPostPageContent() {
               <div>
                 <h2 className="text-sm font-semibold text-gray-800">Nội dung bài viết</h2>
                 <p className="text-xs text-gray-500">
-                  Chỉnh sửa nội dung chi tiết với Lexical playground.
+                  Chọn chế độ Lexical Editor (WYSIWYG) hoặc Raw HTML (paste trực tiếp HTML).
                 </p>
               </div>
             </div>
@@ -635,12 +634,15 @@ function AdminEditPostPageContent() {
                   <LexicalEditor 
                     key={editorKey}
                     initialHtml={initialContentHtml || ''} 
+                    rawHtmlFromDb={rawHtmlFromDb || ''} // Pass raw HTML directly from DB (never modified)
                     onChange={(html) => {
                       console.log('=== DEBUG: LexicalEditor onChange ===')
                       console.log('New HTML length:', html.length)
                       // Only update contentHtml state, don't change initialHtml prop
                       // This prevents InitialHtmlPlugin from reloading and clearing editor
                       setContentHtml(html)
+                      // Also update rawHtmlFromDb if in Raw HTML mode (so it reflects changes)
+                      // But keep the original DB value for reference
                     }} 
                   />
                 )

@@ -62,17 +62,17 @@ export default function Home() {
   // Full page loading state
   if (isLoading && posts.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="relative w-16 h-16 mx-auto mb-4">
             <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
             <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <div className="text-sm font-medium text-gray-600 mb-1">Đang tải dữ liệu...</div>
-          <div className="text-xs text-gray-400">
-            {postsLoading && categoriesLoading && 'Đang tải bài viết và danh mục...'}
-            {postsLoading && !categoriesLoading && 'Đang tải bài viết...'}
-            {!postsLoading && categoriesLoading && 'Đang tải danh mục...'}
+          <div className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Loading data...</div>
+          <div className="text-xs text-gray-400 dark:text-gray-500">
+            {postsLoading && categoriesLoading && 'Loading posts and categories...'}
+            {postsLoading && !categoriesLoading && 'Loading posts...'}
+            {!postsLoading && categoriesLoading && 'Loading categories...'}
           </div>
         </div>
       </div>
@@ -82,10 +82,10 @@ export default function Home() {
   // No posts state (only show if not loading)
   if (!isLoading && (!heroPost || posts.length === 0)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <span className="material-icons-outlined text-6xl text-gray-300 mb-4 block">article</span>
-          <div className="text-sm text-gray-500">Chưa có bài viết nào</div>
+          <span className="material-icons-outlined text-6xl text-gray-300 dark:text-gray-600 mb-4 block">article</span>
+          <div className="text-sm text-gray-500 dark:text-gray-400">No posts yet</div>
         </div>
       </div>
     );
@@ -126,7 +126,7 @@ export default function Home() {
           
           <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 content-between">
             {heroSidePosts.slice(0, 2).map((post) => (
-              <Link href={getPostUrl(post)} key={post.id} className="flex gap-4 group cursor-pointer bg-white p-4 rounded-2xl hover:shadow-lg transition-all duration-300 items-center">
+              <Link href={getPostUrl(post)} key={post.id} className="flex gap-4 group cursor-pointer bg-white dark:bg-gray-800 p-4 rounded-2xl hover:shadow-lg transition-all duration-300 items-center">
                 <div className="w-24 h-24 shrink-0 rounded-xl overflow-hidden">
                   <img src={post.thumbnail || post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 </div>
@@ -134,10 +134,10 @@ export default function Home() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-bold text-primary uppercase">{post.category}</span>
                   </div>
-                  <h3 className="text-sm font-bold text-gray-900 leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-2">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-snug group-hover:text-primary dark:group-hover:text-primary transition-colors line-clamp-2 mb-2">
                     {post.title}
                   </h3>
-                  <span className="text-[10px] text-gray-400">{post.date}</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">{post.date}</span>
                 </div>
               </Link>
             ))}
@@ -157,10 +157,10 @@ export default function Home() {
 
         {/* Categories */}
         <div className="mb-24">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Read by Category</h2>
+          <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-8">Read by Category</h2>
           {categoriesLoading ? (
             <div className="text-center py-12">
-              <div className="text-sm text-gray-500">Đang tải danh mục...</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Loading categories...</div>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -176,8 +176,8 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 justify-center">
-                    <span className="material-icons-outlined text-sm text-gray-400 group-hover:text-primary transition-colors">{cat.icon}</span>
-                    <span className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">{cat.name}</span>
+                    <span className="material-icons-outlined text-sm text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary transition-colors">{cat.icon}</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100 group-hover:text-primary dark:group-hover:text-primary transition-colors">{cat.name}</span>
                   </div>
                 </Link>
               ))}
@@ -198,7 +198,7 @@ export default function Home() {
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="w-10 h-10 rounded-xl bg-white text-gray-500 font-bold hover:bg-gray-100 flex items-center justify-center transition-colors border border-transparent hover:border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+              className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-bold hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition-colors border border-transparent dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               <span className="material-icons-outlined text-sm group-hover:-translate-x-0.5 transition-transform">arrow_back_ios</span>
             </button>
@@ -217,7 +217,7 @@ export default function Home() {
                     className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center transition-all ${
                       currentPage === page
                         ? 'bg-primary text-white shadow-lg shadow-blue-500/30 scale-105'
-                        : 'bg-white text-gray-500 hover:bg-gray-100 border border-transparent hover:border-gray-200'
+                        : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600'
                     }`}
                   >
                     {page}
@@ -228,7 +228,7 @@ export default function Home() {
                 page === currentPage + 2
               ) {
                 return (
-                  <div key={page} className="w-10 h-10 flex items-end justify-center pb-2 text-gray-400 font-bold tracking-widest">
+                  <div key={page} className="w-10 h-10 flex items-end justify-center pb-2 text-gray-400 dark:text-gray-500 font-bold tracking-widest">
                     ...
                   </div>
                 )
@@ -239,7 +239,7 @@ export default function Home() {
             <button
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
-              className="w-10 h-10 rounded-xl bg-white text-gray-500 font-bold hover:bg-gray-100 flex items-center justify-center transition-colors border border-transparent hover:border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+              className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-bold hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition-colors border border-transparent dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               <span className="material-icons-outlined text-sm group-hover:translate-x-0.5 transition-transform">arrow_forward_ios</span>
             </button>

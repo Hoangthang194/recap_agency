@@ -66,10 +66,10 @@ function CategoriesPageContent() {
 
   if (loading) {
     return (
-      <div className="bg-gray-50 min-h-screen">
+      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-12">
-            <div className="text-sm text-gray-500">Đang tải danh sách danh mục...</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Đang tải danh sách danh mục...</div>
           </div>
         </div>
       </div>
@@ -77,22 +77,22 @@ function CategoriesPageContent() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <nav className="flex mb-8 text-sm font-medium text-gray-500">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-          <span className="mx-2 text-gray-300">/</span>
-          <span className="text-gray-900">Categories</span>
+        <nav className="flex mb-8 text-sm font-medium text-gray-500 dark:text-gray-400">
+          <Link href="/" className="hover:text-primary dark:hover:text-primary transition-colors">Home</Link>
+          <span className="mx-2 text-gray-300 dark:text-gray-600">/</span>
+          <span className="text-gray-900 dark:text-gray-100">Categories</span>
         </nav>
 
         {/* Country selector */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
           <div>
-            <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight mb-2">
+            <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-gray-100 tracking-tight mb-2">
               {currentCountry?.name || 'Categories'}
             </h1>
-            <p className="text-sm md:text-base text-gray-500">
+            <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">
               {currentCountry ? `Select a category in ${currentCountry.name} to explore stories.` : 'Select a category to explore stories.'}
             </p>
           </div>
@@ -102,7 +102,7 @@ function CategoriesPageContent() {
             <button
               type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full md:w-auto inline-flex items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="w-full md:w-auto inline-flex items-center justify-between gap-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             >
               <div className="flex items-center gap-2">
                 {currentCountry && (
@@ -135,11 +135,11 @@ function CategoriesPageContent() {
                 />
                 
                 {/* Dropdown Content */}
-                <div className="absolute right-0 mt-2 w-full md:w-80 z-20 bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 flex flex-col">
+                <div className="absolute right-0 mt-2 w-full md:w-80 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-h-96 flex flex-col">
                   {/* Search Input */}
-                  <div className="p-3 border-b border-gray-200">
+                  <div className="p-3 border-b border-gray-200 dark:border-gray-700">
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 material-icons-outlined text-gray-400 text-base">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 material-icons-outlined text-gray-400 dark:text-gray-500 text-base">
                         search
                       </span>
                       <input
@@ -147,7 +147,7 @@ function CategoriesPageContent() {
                         placeholder="Tìm kiếm quốc gia..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                        className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
@@ -156,11 +156,11 @@ function CategoriesPageContent() {
                   {/* Countries List */}
                   <div className="flex-1 overflow-y-auto max-h-64">
                     {countriesLoading ? (
-                      <div className="p-4 text-center text-sm text-gray-500">
+                      <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
                         Đang tải...
                       </div>
                     ) : filteredCountries.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-gray-500">
+                      <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
                         Không tìm thấy quốc gia nào
                       </div>
                     ) : (
@@ -170,17 +170,17 @@ function CategoriesPageContent() {
                             key={country.id}
                             type="button"
                             onClick={() => handleCountrySelect(country.id)}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors ${
-                              country.id === currentCountry?.id ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-700'
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                              country.id === currentCountry?.id ? 'bg-primary/10 dark:bg-primary/20 text-primary font-semibold' : 'text-gray-700 dark:text-gray-300'
                             }`}
                           >
-                            <span className="material-icons-outlined text-base text-gray-400">
+                            <span className="material-icons-outlined text-base text-gray-400 dark:text-gray-500">
                               {country.icon}
                             </span>
                             <div className="flex-1">
                               <div className="font-medium">{country.name}</div>
                               {country.description && (
-                                <div className="text-xs text-gray-500 line-clamp-1">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
                                   {country.description}
                                 </div>
                               )}
@@ -204,7 +204,7 @@ function CategoriesPageContent() {
         {/* Categories for selected country */}
         {categories.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400">
               {currentCountry ? `Chưa có danh mục nào cho ${currentCountry.name}.` : 'Chưa có danh mục nào.'}
             </p>
           </div>
@@ -212,7 +212,7 @@ function CategoriesPageContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {categories.map((category) => (
             <Link key={category.id} href={`/${category.id}`} className="group">
-              <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-gray-100 mb-5 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
+              <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-gray-100 dark:bg-gray-800 mb-5 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
                 <img
                   src={category.image}
                   alt={category.name}
@@ -223,22 +223,22 @@ function CategoriesPageContent() {
                 ></div>
 
                 {/* Icon overlay */}
-                <div className="absolute top-6 right-6 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                  <span className="material-icons-outlined text-gray-800">{category.icon}</span>
+                <div className="absolute top-6 right-6 w-12 h-12 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                  <span className="material-icons-outlined text-gray-800 dark:text-gray-200">{category.icon}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3 px-2 mb-4">
-                <span className="material-icons-outlined text-gray-400 group-hover:text-primary transition-colors">
+                <span className="material-icons-outlined text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary transition-colors">
                   {category.icon}
                 </span>
                 <div>
-                  <span className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors block">
+                  <span className="text-xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-primary dark:group-hover:text-primary transition-colors block">
                     {category.name}
                     {category.isCity && (
-                      <span className="ml-2 text-xs font-normal text-gray-500">(City)</span>
+                      <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">(City)</span>
                     )}
                   </span>
-                  <span className="text-sm text-gray-500">{category.description}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{category.description}</span>
                 </div>
               </div>
             </Link>
@@ -254,8 +254,8 @@ function CategoriesPageContent() {
 export default function CategoriesPage() {
   return (
     <Suspense fallback={
-      <div className="bg-gray-50 min-h-screen flex items-center justify-center">
-        <div className="text-sm text-gray-500">Loading...</div>
+      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
+        <div className="text-sm text-gray-500 dark:text-gray-400">Loading...</div>
       </div>
     }>
       <CategoriesPageContent />

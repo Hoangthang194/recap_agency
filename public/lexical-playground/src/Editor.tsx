@@ -88,6 +88,7 @@ import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 import InitialHtmlPlugin from './plugins/InitialHtmlPlugin';
 import OnChangePlugin from './plugins/OnChangePlugin';
+import HtmlEditorPlugin from './plugins/HtmlEditorPlugin';
 import {useLexicalEditorContext} from './context/LexicalEditorContext';
 
 const COLLAB_DOC_ID = 'main';
@@ -191,6 +192,7 @@ export default function Editor(): JSX.Element {
         <AutoFocusPlugin />
         {initialHtml && <InitialHtmlPlugin initialHtml={initialHtml} />}
         {onChange && <OnChangePlugin onChange={onChange} />}
+        <HtmlEditorPlugin />
         {selectionAlwaysOnDisplay && <SelectionAlwaysOnDisplay />}
         <ClearEditorPlugin />
         <ComponentPickerPlugin />

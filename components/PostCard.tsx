@@ -28,20 +28,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, className = '' }) => {
         </div>
 
         <Link href={getPostUrl(post)} className="block mb-3">
-          <h3 className="text-xl font-bold text-gray-900 leading-snug group-hover:text-primary transition-colors">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-snug group-hover:text-primary dark:group-hover:text-primary transition-colors">
             {post.title}
           </h3>
         </Link>
         
-        <p className="text-gray-500 text-sm leading-relaxed mb-6 line-clamp-3">
+        <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-6 line-clamp-3">
           {post.excerpt}
         </p>
         
-        <div className="mt-auto flex items-center gap-3 pt-4 border-t border-gray-100">
+        <div className="mt-auto flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
           <img src={post.author.avatar} alt={post.author.name} className="w-8 h-8 rounded-full object-cover" />
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-gray-900">{post.author.name}</span>
-            <span className="text-[10px] text-gray-400 font-medium">{post.date}</span>
+            <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{post.author.name}</span>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{post.date}</span>
           </div>
         </div>
       </div>

@@ -74,14 +74,14 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white dark:bg-gray-900 min-h-screen">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-black text-gray-900 mb-6 leading-tight tracking-tight">
+          <h1 className="text-5xl md:text-6xl font-black text-gray-900 dark:text-gray-100 mb-6 leading-tight tracking-tight">
             Contact Us
           </h1>
-          <p className="text-xl text-gray-500 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-xl text-gray-500 dark:text-gray-400 leading-relaxed max-w-2xl mx-auto">
             Have a question or want to get in touch? We'd love to hear from you.
           </p>
         </div>
@@ -92,32 +92,32 @@ export default function ContactPage() {
             <div className="space-y-8">
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center">
                     <span className="material-icons-outlined text-primary text-xl">email</span>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">Email</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Email</h3>
                 </div>
-                <p className="text-gray-600 ml-15">contact@zerra.blog</p>
+                <p className="text-gray-600 dark:text-gray-300 ml-15">contact@zerra.blog</p>
               </div>
 
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center">
                     <span className="material-icons-outlined text-primary text-xl">phone</span>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">Phone</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Phone</h3>
                 </div>
-                <p className="text-gray-600 ml-15">+852 3123 4588</p>
+                <p className="text-gray-600 dark:text-gray-300 ml-15">+852 3123 4588</p>
               </div>
 
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center">
                     <span className="material-icons-outlined text-primary text-xl">location_on</span>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">Address</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Address</h3>
                 </div>
-                <p className="text-gray-600 ml-15">
+                <p className="text-gray-600 dark:text-gray-300 ml-15">
                   21/F, Harbour View Center<br />
                   168 Gloucester Road<br />
                   Wan Chai, Hong Kong
@@ -126,12 +126,12 @@ export default function ContactPage() {
 
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center">
                     <span className="material-icons-outlined text-primary text-xl">schedule</span>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">Hours</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Hours</h3>
                 </div>
-                <p className="text-gray-600 ml-15">
+                <p className="text-gray-600 dark:text-gray-300 ml-15">
                   Monday - Friday: 9:00 AM - 6:00 PM<br />
                   Saturday: 10:00 AM - 4:00 PM<br />
                   Sunday: Closed
@@ -142,11 +142,11 @@ export default function ContactPage() {
 
           {/* Contact Form */}
           <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="bg-gray-50 rounded-2xl p-8">
+            <form onSubmit={handleSubmit} className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8">
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-bold text-gray-900 mb-2">
+                    <label htmlFor="name" className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">
                       Name *
                     </label>
                     <input
@@ -156,13 +156,13 @@ export default function ContactPage() {
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                       placeholder="Your name"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-bold text-gray-900 mb-2">
+                    <label htmlFor="email" className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">
                       Email *
                     </label>
                     <input
@@ -172,14 +172,14 @@ export default function ContactPage() {
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                       placeholder="your.email@example.com"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-bold text-gray-900 mb-2">
+                  <label htmlFor="subject" className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">
                     Subject *
                   </label>
                   <input
@@ -189,13 +189,13 @@ export default function ContactPage() {
                     value={formData.subject}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                     placeholder="What's this about?"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="message" className="block text-sm font-bold text-gray-900 mb-2">
+                  <label htmlFor="message" className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">
                     Message *
                   </label>
                   <textarea
@@ -205,7 +205,7 @@ export default function ContactPage() {
                     onChange={handleChange}
                     required
                     rows={6}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
                     placeholder="Tell us what's on your mind..."
                   ></textarea>
                 </div>
@@ -236,7 +236,7 @@ export default function ContactPage() {
         <div className="mt-16 text-center">
           <Link 
             href="/" 
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-primary transition-colors"
+            className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors"
           >
             <span className="material-icons-outlined text-sm">arrow_back</span>
             Back to Home

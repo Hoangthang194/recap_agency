@@ -45,10 +45,10 @@ export default function CategoryPage() {
   // Show loading state
   if (loading && !category) {
     return (
-      <div className="bg-gray-50 min-h-screen">
+      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center py-20">
-            <div className="text-sm text-gray-500">Đang tải...</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Loading...</div>
           </div>
         </div>
       </div>
@@ -58,12 +58,12 @@ export default function CategoryPage() {
   // If category not found, show 404
   if (!loading && !category) {
     return (
-      <div className="bg-gray-50 min-h-screen">
+      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center py-20">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Category not found</h1>
-            <p className="text-gray-500 mb-6">The category you're looking for doesn't exist.</p>
-            <Link href="/" className="text-primary hover:underline">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Category not found</h1>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">The category you're looking for doesn't exist.</p>
+            <Link href="/" className="text-primary dark:text-primary hover:underline">
               Go back to home
             </Link>
           </div>
@@ -78,28 +78,28 @@ export default function CategoryPage() {
   const categoryImage = category?.image || ''
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="w-full bg-white border-b border-gray-100 py-12">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="w-full bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 py-12 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex mb-8 text-xs font-medium text-gray-500">
-            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-            <span className="mx-2 text-gray-300">/</span>
-            <Link href={isCity ? "/categories" : "/"} className="hover:text-primary transition-colors">
+          <nav className="flex mb-8 text-xs font-medium text-gray-500 dark:text-gray-400">
+            <Link href="/" className="hover:text-primary dark:hover:text-primary transition-colors">Home</Link>
+            <span className="mx-2 text-gray-300 dark:text-gray-600">/</span>
+            <Link href={isCity ? "/categories" : "/"} className="hover:text-primary dark:hover:text-primary transition-colors">
               {isCity ? "Cities" : "Posts"}
             </Link>
-            <span className="mx-2 text-gray-300">/</span>
-            <span className="text-gray-900">{categoryName}</span>
+            <span className="mx-2 text-gray-300 dark:text-gray-600">/</span>
+            <span className="text-gray-900 dark:text-gray-100">{categoryName}</span>
           </nav>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end">
             <div className="max-w-2xl">
-              <h1 className="text-5xl font-black text-gray-900 mb-6 tracking-tight">{categoryName}</h1>
-              <p className="text-lg text-gray-500 leading-relaxed">
+              <h1 className="text-5xl font-black text-gray-900 dark:text-gray-100 mb-6 tracking-tight">{categoryName}</h1>
+              <p className="text-lg text-gray-500 dark:text-gray-400 leading-relaxed">
                 {categoryDescription}
               </p>
             </div>
             <div className="hidden md:block">
-              <img src={categoryImage} alt={categoryName} className="w-20 h-20 rounded-2xl object-cover shadow-lg rotate-3 border-2 border-white" />
+              <img src={categoryImage} alt={categoryName} className="w-20 h-20 rounded-2xl object-cover shadow-lg rotate-3 border-2 border-white dark:border-gray-800" />
             </div>
           </div>
         </div>
@@ -108,12 +108,12 @@ export default function CategoryPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pb-24">
         {postsLoading ? (
           <div className="text-center py-20">
-            <div className="text-sm text-gray-500">Đang tải bài viết...</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Loading posts...</div>
           </div>
         ) : categoryPosts.length > 0 ? (
           <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
             {categoryPosts.map((post, idx) => (
-              <div key={post.id} className="break-inside-avoid bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 group">
+              <div key={post.id} className="break-inside-avoid bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 group">
                 <Link href={getPostUrl(post)}>
                   <img src={post.thumbnail || post.image} alt={post.title} className="w-full object-cover" />
                   <div className="p-6">
@@ -123,17 +123,17 @@ export default function CategoryPage() {
                         {category?.name || post.category}
                       </span>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900 leading-tight mb-4 group-hover:text-primary transition-colors">
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-4 group-hover:text-primary dark:group-hover:text-primary transition-colors">
                       {post.title}
                     </h3>
-                    <p className="text-gray-500 text-sm leading-relaxed mb-6">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-6">
                       {post.excerpt}
                     </p>
                     <div className="flex items-center gap-3">
                       <img src={post.author.avatar} alt={post.author.name} className="w-8 h-8 rounded-full" />
                       <div className="flex flex-1 justify-between items-center">
-                        <span className="text-xs font-bold text-gray-900">{post.author.name}</span>
-                        <span className="text-[10px] text-gray-400">{post.date}</span>
+                        <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{post.author.name}</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500">{post.date}</span>
                       </div>
                     </div>
                   </div>
@@ -143,7 +143,7 @@ export default function CategoryPage() {
           </div>
         ) : (
           <div className="text-center py-20">
-            <p className="text-gray-500 text-lg">Chưa có bài viết nào trong danh mục này.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-lg">No posts in this category yet.</p>
           </div>
         )}
       </div>
