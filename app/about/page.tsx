@@ -20,7 +20,7 @@ export default function AboutPage() {
           <div className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Mission</h2>
             <p className="text-lg text-gray-600 leading-relaxed mb-4">
-              At Recap, we believe in the power of storytelling and knowledge sharing. Our mission is to create a platform where ideas flourish, perspectives broaden, and communities connect through meaningful content.
+              At Zerra, we believe in the power of storytelling and knowledge sharing. Our mission is to create a platform where ideas flourish, perspectives broaden, and communities connect through meaningful content.
             </p>
             <p className="text-lg text-gray-600 leading-relaxed">
               We curate and create articles that inspire, inform, and engage readers across various topics—from business and technology to travel and lifestyle.

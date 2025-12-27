@@ -26,7 +26,7 @@ const Footer: React.FC = () => {
                             Your mental filter in a world of constant input — cutting through the noise to focus on what truly matters.
                         </p>
                         <p className="text-xs text-gray-400">
-                            © 2025 Recap. All Rights Reserved.
+                            © 2025 Zerra. All Rights Reserved.
                         </p>
                     </div>
 

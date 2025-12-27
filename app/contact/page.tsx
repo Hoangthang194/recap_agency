@@ -97,7 +97,7 @@ export default function ContactPage() {
                   </div>
                   <h3 className="text-lg font-bold text-gray-900">Email</h3>
                 </div>
-                <p className="text-gray-600 ml-15">marketing@kafinity.agency</p>
+                <p className="text-gray-600 ml-15">contact@zerra.blog</p>
               </div>
 
               <div>

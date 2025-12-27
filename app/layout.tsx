@@ -65,18 +65,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <title>Zerra Blog – Travel &amp; AI</title>
-        <meta name="description" content="Travel blog, AI, công nghệ và trải nghiệm toàn cầu" />
+        <title>Zerra.blog | Reviews Without Limits</title>
+        <meta name="description" content="From everyday tools to complex platforms, Zerra.blog reviews topics across countless niches with clarity, independence, and user-first insight." />
         <meta property="og:title" content="Zerra Blog" />
-        <meta property="og:description" content="Travel & AI Blog" />
+        <meta property="og:description" content="From everyday tools to complex platforms, Zerra.blog reviews topics across countless niches with clarity, independence, and user-first insight." />
         <meta property="og:url" content="https://zerra.blog" />
         <meta property="og:site_name" content="Zerra Blog" />
         <meta property="og:type" content="website" />
         <meta name="google-site-verification" content="google604730c85a229469" />
-        <link rel="icon" type="image/webp" href="/assets/favicon.webp" />
-        <link rel="icon" type="image/webp" sizes="185x185" href="/assets/favicon-185x185.webp" />
-        <link rel="icon" type="image/webp" sizes="300x300" href="/assets/favicon-300x300.webp" />
-        <link rel="apple-touch-icon" sizes="185x185" href="/assets/favicon-185x185.webp" />
+        <link rel="icon" type="image/png" href="/assets/zerra.png" />
+        <link rel="apple-touch-icon" href="/assets/zerra.png" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
       </head>
       <body className={`${inter.variable} ${bricolageGrotesque.variable} antialiased font-sans`}>
@@ -87,7 +85,7 @@ export default function RootLayout({
             <aside className="hidden md:flex w-64 flex-col border-r border-gray-200 bg-white">
               <div className="h-16 flex items-center px-6 border-b border-gray-200">
                 <span className="text-lg font-black tracking-wide text-gray-900">
-                  Recap <span className="text-primary">Admin</span>
+                  Zerra <span className="text-primary">Admin</span>
                 </span>
               </div>
               <nav className="flex-1 px-4 py-6 space-y-1 text-sm">
@@ -157,7 +155,7 @@ export default function RootLayout({
               {/* Top bar */}
               <header className="h-16 border-b border-gray-200 flex items-center justify-between px-4 md:px-6 bg-white/80 backdrop-blur">
                 <div className="flex items-center gap-2 md:hidden">
-                  <span className="text-base font-semibold text-gray-900">Recap Admin</span>
+                  <span className="text-base font-semibold text-gray-900">Zerra Admin</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs md:text-sm">
                   <span className="hidden md:inline text-gray-500">Bảng Điều Khiển</span>

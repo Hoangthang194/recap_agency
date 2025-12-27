@@ -88,7 +88,7 @@ const Header: React.FC = () => {
     // Get latest 4 posts for spotlight
     const spotlightPosts = posts.slice(0, 4);
     
-    // Filter categories (non-cities) for Posts menu
+    // Filter categories (non-cities) for Categories menu
     const postCategories = categories.filter(cat => !cat.isCity);
     
     const toggleArea = (areaId: string) => {
@@ -191,14 +191,14 @@ const Header: React.FC = () => {
                                         className="object-contain h-8 w-auto"
                                         priority
                                     />
-                            </div>
-                        </Link>
+                                </div>
+                            </Link>
                         </h1>
                     </div>
 
                     <div className="hidden md:flex space-x-2 items-center">
-                        {['Home', 'Travel', 'Posts', 'About'].map((item) => {
-                            const hasSubmenu = item === 'Travel' || item === 'Posts';
+                        {['Home', 'Travel', 'Categories', 'About'].map((item) => {
+                            const hasSubmenu = item === 'Travel' || item === 'Categories';
                             
                             return (
                              <div key={item} className="relative group px-4 py-2">
@@ -314,8 +314,8 @@ const Header: React.FC = () => {
                                     </div>
                                 )}
                                     
-                                    {/* Simple Dropdown Menu for Posts - Centered on screen */}
-                                    {item === 'Posts' && (
+                                    {/* Simple Dropdown Menu for Categories - Centered on screen */}
+                                    {item === 'Categories' && (
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
                                             <div className="bg-white rounded-xl shadow-lg border border-gray-100 w-[320px] max-h-[500px] overflow-y-auto custom-scrollbar py-3">
                                                 {categoriesLoading ? (
@@ -343,10 +343,10 @@ const Header: React.FC = () => {
                                                         </Link>
                                                     ))
                                                 )}
-                                            </div>
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
+                            </div>
                             );
                         })}
                     </div>
@@ -418,8 +418,8 @@ const Header: React.FC = () => {
 
                     {/* Menu list (scrollable) - use same items as desktop */}
                     <div className="flex-1 overflow-y-auto">
-                        {['Home', 'Travel', 'Posts', 'About'].map((item) => {
-                            const hasSubmenu = item === 'Travel' || item === 'Posts';
+                        {['Home', 'Travel', 'Categories', 'About'].map((item) => {
+                            const hasSubmenu = item === 'Travel' || item === 'Categories';
                             const isExpanded = mobileExpandedItems.has(item);
                             const isActive =
                                 (item === 'Home' && pathname === '/') ||
@@ -509,8 +509,8 @@ const Header: React.FC = () => {
                                                 </div>
                                             )}
 
-                                            {/* Posts submenu = list of categories */}
-                                            {item === 'Posts' && isExpanded && (
+                                            {/* Categories submenu = list of categories */}
+                                            {item === 'Categories' && isExpanded && (
                                                 <div className="bg-gray-50 overflow-hidden">
                                                     <div className="px-6 py-3 space-y-1 animate-slide-in-left">
                                                         {categoriesLoading ? (
@@ -622,7 +622,7 @@ const Header: React.FC = () => {
                                         fillRule="evenodd"
                                     />
                                 </svg>
-                            </button>
+                        </button>
                             <button
                                 type="button"
                                 className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -642,9 +642,9 @@ const Header: React.FC = () => {
                                         fillRule="evenodd"
                                     />
                                 </svg>
-                            </button>
-                        </div>
+                        </button>
                     </div>
+                </div>
                 </div>
             </div>
         </header>
