@@ -69,7 +69,7 @@ function CategoriesPageContent() {
       <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-12">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Đang tải danh sách danh mục...</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Loading categories...</div>
           </div>
         </div>
       </div>
@@ -114,10 +114,10 @@ function CategoriesPageContent() {
                   </>
                 )}
                 {!currentCountry && countriesLoading && (
-                  <span className="text-gray-500">Đang tải...</span>
+                  <span className="text-gray-500">Loading...</span>
                 )}
                 {!currentCountry && !countriesLoading && (
-                  <span className="text-gray-500">Chọn quốc gia</span>
+                  <span className="text-gray-500">Select country</span>
                 )}
               </div>
               <span className={`material-icons-outlined text-base transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}>
@@ -144,7 +144,7 @@ function CategoriesPageContent() {
                       </span>
                       <input
                         type="text"
-                        placeholder="Tìm kiếm quốc gia..."
+                        placeholder="Search countries..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
@@ -157,11 +157,11 @@ function CategoriesPageContent() {
                   <div className="flex-1 overflow-y-auto max-h-64">
                     {countriesLoading ? (
                       <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                        Đang tải...
+                        Loading...
                       </div>
                     ) : filteredCountries.length === 0 ? (
                       <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                        Không tìm thấy quốc gia nào
+                        No countries found
                       </div>
                     ) : (
                       <div className="py-1">
@@ -205,7 +205,7 @@ function CategoriesPageContent() {
         {categories.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 dark:text-gray-400">
-              {currentCountry ? `Chưa có danh mục nào cho ${currentCountry.name}.` : 'Chưa có danh mục nào.'}
+              {currentCountry ? `No categories available for ${currentCountry.name}.` : 'No categories available.'}
             </p>
           </div>
         ) : (
