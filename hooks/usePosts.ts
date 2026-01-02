@@ -10,6 +10,7 @@ interface ApiResponse<T> {
   error?: string
   message?: string
   count?: number
+  totalRecord?: number
 }
 
 interface CreatePostInput {
@@ -39,6 +40,7 @@ export interface UsePostsReturn {
   // Data
   posts: Post[]
   post: Post | null
+  totalRecord: number
   
   // Loading states
   loading: boolean
@@ -62,6 +64,7 @@ export interface UsePostsReturn {
 export function usePosts(initialOptions?: UsePostsOptions): UsePostsReturn {
   const [posts, setPosts] = useState<Post[]>([])
   const [post, setPost] = useState<Post | null>(null)
+  const [totalRecord, setTotalRecord] = useState(0)
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -163,6 +166,7 @@ export function usePosts(initialOptions?: UsePostsOptions): UsePostsReturn {
       
       const transformedPosts = (result.data || []).map(transformPost)
       setPosts(transformedPosts)
+      setTotalRecord(result.totalRecord || 0)
     } catch (err: any) {
       const errorMessage = err.message || 'An error occurred while fetching posts'
       setError(errorMessage)
@@ -394,6 +398,7 @@ export function usePosts(initialOptions?: UsePostsOptions): UsePostsReturn {
   return {
     posts,
     post,
+    totalRecord,
     loading,
     creating,
     error,

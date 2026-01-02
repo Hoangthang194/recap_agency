@@ -158,6 +158,29 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
     const offset = searchParams.get('offset');
 
+    // Build WHERE clause for counting total records
+    let countSql = `
+      SELECT COUNT(*) as total
+      FROM posts p
+      WHERE p.is_deleted = 0
+    `;
+    const countParams: any[] = [];
+
+    if (categoryId) {
+      countSql += ' AND p.category_id = ?';
+      countParams.push(categoryId);
+    }
+
+    if (authorId) {
+      countSql += ' AND p.author_id = ?';
+      countParams.push(authorId);
+    }
+
+    // Get total count
+    const countResult = await query<any[]>(countSql, countParams);
+    const totalRecord = countResult[0]?.total || 0;
+
+    // Build query for posts
     let sql = `
       SELECT 
         p.*,
@@ -198,6 +221,7 @@ export async function GET(request: NextRequest) {
         success: true,
         data: posts,
         count: posts.length,
+        totalRecord: totalRecord,
       },
       { status: 200 }
     );
