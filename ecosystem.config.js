@@ -1,9 +1,8 @@
 module.exports = {
   apps: [
     {
-      name: 'recap-blog',
-      script: 'npm',
-      args: 'start',
+      name: 'zerra-blog',
+      script: 'server.js',
       cwd: './',
       instances: 1,
       exec_mode: 'fork',
@@ -17,7 +16,8 @@ module.exports = {
       merge_logs: true,
       autorestart: true,
       watch: false,
-      max_memory_restart: '1G'
+      max_memory_restart: '1G',
+      interpreter: 'node'
     }
   ]
 };
