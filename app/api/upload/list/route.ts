@@ -31,7 +31,7 @@ export async function GET() {
       })
       .map(file => ({
         fileName: file,
-        url: `/uploads/${file}`,
+        url: `/api/uploads/${file}`,
         path: join(uploadsDir, file),
       }))
       .sort((a, b) => {
