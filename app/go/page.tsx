@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-export default function GoPage() {
+function GoRedirect() {
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
@@ -87,6 +87,23 @@ export default function GoPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function GoPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Đang tải...</p>
+          </div>
+        </div>
+      }
+    >
+      <GoRedirect />
+    </Suspense>
   )
 }
 
