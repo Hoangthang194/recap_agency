@@ -144,6 +144,17 @@ export default function RootLayout({
                   <span className="material-icons-outlined text-base">email</span>
                   <span>Tin Nhắn</span>
                 </a>
+                <a
+                  href="/admin/links"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    pathname.startsWith('/admin/links') 
+                      ? 'bg-primary/10 text-primary font-semibold' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <span className="material-icons-outlined text-base">link</span>
+                  <span>Quản Lý Link</span>
+                </a>
               </nav>
               <div className="px-4 py-4 border-t border-gray-200 text-xs text-gray-500">
                 Đăng nhập với tư cách <span className="font-semibold text-gray-900">Admin</span>
